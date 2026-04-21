@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}新建笔记 — 羚羊之家{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>新建笔记</h1>
+  <a href="{{ url_for('note') }}" class="btn-ghost">取消</a>
+</div>
+
+<div class="card-dark" style="padding:1.5rem">
+  <div style="margin-bottom:1rem">
+    <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">标题 *</label>
+    <input type="text" id="noteTitle" class="form-control-dark" placeholder="请输入笔记标题">
+    <div id="titleError" style="color:var(--danger);font-size:0.8rem;min-height:1.1rem;margin-top:.25rem"></div>
+  </div>
+  <div style="margin-bottom:1.25rem">
+    <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">内容</label>
+    <textarea id="noteContent"></textarea>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <button class="btn-accent" id="saveBtn" onclick="saveNote()">保存笔记</button>
+    <div id="saveMsg" style="font-size:0.82rem;min-height:1rem"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+  const easyMDE = new EasyMDE({
+    element: document.getElementById('noteContent'),
+    placeholder: '用 Markdown 写点什么…',
+    spellChecker: false,
+    autosave: { enabled: false },
+    toolbar: [
+      'bold', 'italic', 'heading', '|',
+      'quote', 'unordered-list', 'ordered-list', '|',
+      'link', 'image', '|',
+      'preview', 'side-by-side', 'fullscreen'
+    ]
+  });
+
+  function saveNote() {
+    const title      = document.getElementById('noteTitle').value.trim();
+    const titleError = document.getElementById('titleError');
+    const saveMsg    = document.getElementById('saveMsg');
+    const saveBtn    = document.getElementById('saveBtn');
+
+    if (!title) {
+      titleError.textContent = '请输入标题';
+      return;
+    }
+    titleError.textContent = '';
+    saveBtn.disabled       = true;
+    saveBtn.textContent    = '保存中…';
+    saveMsg.textContent    = '';
+
+    fetch('/note/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ title: title, content: easyMDE.value() })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.code === 1) {
+        window.location.href = '/note';
+      } else {
+        saveMsg.style.color = 'var(--danger)';
+        saveMsg.textContent = data.msgs || '保存失败';
+        saveBtn.disabled    = false;
+        saveBtn.textContent = '保存笔记';
+      }
+    })
+    .catch(() => {
+      saveMsg.style.color = 'var(--danger)';
+      saveMsg.textContent = '网络错误，请重试';
+      saveBtn.disabled    = false;
+      saveBtn.textContent = '保存笔记';
+    });
+  }
+</script>
+{% endblock %}
