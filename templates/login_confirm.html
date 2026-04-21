@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<meta  http-equiv="content-Type" content="text/html"; charset="utf-8" >
+<html>
+<head>
+<script src="{{url_for('static', filename='js/jquery-3.2.1.min.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/login.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer-min.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layer.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.min.js')}}">
+</script>
+<script src="{{ url_for('static', filename='js/vendor/modernizr.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/respond.min.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/login_confirm.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.min.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.min.css')}}">
+</head>
+<title>惬意嗨go</title>
+<body style="text-align: center">
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12" style="margin:0 auto">
+			<form class="form-horizontal">
+				<div class="control-group">
+					 <label class="control-label" for="inputEmail">账号</label>
+					<div class="controls">
+						<input id="inputEmail" type="text" />
+					</div>
+				</div>
+				<div class="control-group">
+					 <label class="control-label" for="inputPassword">密码</label>
+					<div class="controls">
+						<input id="inputPassword" type="password" />
+					</div>
+				</div>
+				<div class="control-group">
+					<div class="controls">
+						 <label class="checkbox"><input type="checkbox" /> Remember me</label> <button type="submit" class="btn">登陆</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+</body>
+</html>

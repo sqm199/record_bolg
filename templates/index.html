@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<title>login</title>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script type="text/javascript" src="{{url_for('static', filename='js/jquery-1.7.2.min.js')}}"></script>
+<script type="text/javascript" src="{{url_for('static', filename='js/jquery.easing.1.3.js')}}"></script>
+<script type="text/javascript" src="{{url_for('static', filename='js/downwardtooltips.js')}}"></script>
+<link href="{{url_for('static', filename='CSS/index.css')}}" rel="stylesheet" />
+</head>
+<body>
+<div id="time" class="heh" style="color:blue">
+</div>
+<div class="heh">
+<label style="padding-top:50px;color: red">Check It! Please let it add to 11</label>
+</div>
+<div class="heh">
+<input id="input1" type="button" style="width:50px" value="0" />
+</div>
+<div class="bth-login">
+ <div>
+ <label>Name:</label>
+ <input id="userName" name="username" class="bth-login1" type="text" placeholder="" style="width:160px" value={{username}} >
+ </div>
+ <div>
+ <label>PassWord:</label> 
+ <input id="userPassword" name="userpassword" class="bth-login1" type="password" style="width:140px;color: red">
+ </div>
+ <div>
+ <button id="login" type="submit" style="width:100px" onclick="#">Login</button>
+ </div>
+</div>
+</body>
+<script type="text/javascript" src="{{url_for('static', filename='js/test0129.js')}}"></script>
+</html>

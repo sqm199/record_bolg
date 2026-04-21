@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<meta  http-equiv="content-Type" content="text/html"; charset="utf-8" >
+<html>
+<head>
+<script src="{{url_for('static', filename='js/jquery-3.2.1.min.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/login.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer-min.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layer.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.min.js')}}">
+</script>
+<script src="{{ url_for('static', filename='js/vendor/modernizr.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vendor/respond.min.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/login.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.min.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.min.css')}}">
+</head>
+<title>惬意嗨go</title>
+<body>
+	<div class="level level-hero hero-home has-hint">
+		<div class="hero-overlay visible-lg"></div>
+		<div class="container full-height">
+			<div class=v-align-parent>
+				<div class=v-center>
+					<div class="row">
+						<div class="col-xs-10 col-sm-6">
+							<h1 class="mb-10 heading">你的安静社区. <span>在这里.</span></h1>
+							<div class="subheading mb-20">得到和分享更多的资讯 <br class=hidden-xs>理性看生活. </div>
+						</div>
+					</div>
+					<div>
+						<p class="btn btn-prepend btn-launch-video" href="#">
+							<i class="prepended icon-append-play"></i>一直建设
+						</p>
+						<p class="btn btn-prepend" href="#">
+							<i class="prepended icon-append-iphone"></i>未完待续
+						</p>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <button class="query" style="width: 100px;height: 35px;background-color: #2aabd2;" onclick="login()">登陆
+						</button>
+                        <button class="query" style="width: 100px;height: 35px;background-color: #d2a458;">注册
+						</button>
+					</div>
+				</div>
+			</div>
+			<div class=hint-arrow></div>
+		</div>
+	</div>
+	<div class=level level-img-right>
+		<img src="{{url_for('static', filename='img/white.jpg')}}" alt style="padding-left:70px">
+		<div class=container xs-mb-30>
+			<div class="row mb-60 xs-mb-20">
+				<div class="col-sm-1 col-sm-offset-2">
+					<i class="icon icon-check"></i>
+				</div>
+				<div class="col-sm-2">
+					<h3 class="mb-20">DJ 准备</h3>
+					<p class="smaller xs-mb-40 xs-mw">这里有小众悦耳的音乐.just music
+				</div>
+
+				<div class="col-sm-1">
+					<i class="icon icon-calendar"></i>
+				</div>
+				<div class="col-sm-2">
+					<h3 class="mb-15">影视资讯</h3>
+					<p class="smaller xs-mb-40 xs-mw">分享最理性客观的影视评价，让我们和烂片say no.
+				</div>
+			</div>
+
+			<div class=row>
+				<div class="col-sm-1 col-sm-offset-2">
+					<i class="icon icon-user"></i>
+				</div>
+				<div class="col-sm-2">
+					<h3 class="mb-15">NBA in there</h3>
+					<p class="smaller xs-mb-40 xs-mw">我们致力于营造更和谐的看球氛围和社区，在这里，篮球是唯一目的.
+				</div>
+
+				<div class="col-sm-1">
+					<i class="icon icon-clock"></i>
+				</div>
+				<div class="col-sm-2">
+					<h3 class="mb-15">IT 分享</h3>
+					<p class="smaller xs-mb-40 xs-mw">技术的发展离不开大家一起的支持，开放和分享是技术进步永恒的主题，我们在这里
+				</div>
+			</div>
+		</div>
+{#	</div><div class="copyrights">ALL from <a href="#" >sy工作室</a></div>#}
+
+	<div class="level level-img-right">
+
+		<div class="container xs-mb-20">
+			<img class=img-right-sprite src="{{ url_for('static', filename='img/black.jpg') }}" alt>
+			<div class="row mb-60 xs-mb-20">
+				<div class="col-sm-3 col-lg-offset-1 col-lg-5">
+					<h1 class="mb-20 xs-mb-8 heading color-dark heading-bordered xl-heading-outdent">TIPs</h1>
+					<h3 class="w-300 color-dark mb-8">可能这里还是没有你想要的</h3>
+					<p class=xs-mw>没有关系:
+				</div>
+			</div>
+
+		<div class="visible-xs xs-mw xs-mb-40">
+			<img src={{url_for('static', filename='img/red.jpg')}} alt>
+		</div>
+
+			<div class="row mb-60 xs-mb-20">
+				<div class="col-sm-1 col-lg-offset-1">
+					<i class="icon icon-globe"></i>
+				</div>
+				<div class="col-sm-4 col-md-3">
+					<h3 class="mb-15">我们在聆听</h3>
+					<p class="smaller xs-mw">您的所有想法都可以告诉我们，我们去满足.
+				</div>
+			</div>
+
+			<div class="row mb-60 xs-mb-20">
+				<div class="col-sm-1 col-lg-offset-1">
+					<i class="icon icon-eye"></i>
+				</div>
+				<div class="col-sm-4 col-md-3">
+					<h3 class="mb-15">我们在进步</h3>
+					<p class="smaller xs-mw">从0到有从来不是简单的事情，相信我们会越来越好.
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-1 col-lg-offset-1">
+					<i class="icon icon-bubble"></i>
+				</div>
+				<div class="col-sm-4 col-md-3">
+					<h3 class="mb-15">我们还有梦想</h3>
+					<p class="smaller xs-mw">坚持和大家一起走下去，热情和梦想是我们最大的支撑.
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+	<div class="level level-outro text-center">
+		<div class=container>
+
+			<form class=contact method=get action="/" accept-charset="UTF-8">
+
+				<div class="h2 mb-20">一切可能，尽在 <br class=visible-xs-block> 惬意嗨go</div>
+				<p class="mb-35">我的邮箱是656438206@qq.com，带着你的想法和咖啡，我们一起聊聊吧
+
+				<div class="btn-append dropdown-prepend">
+
+{#					<div class=dropdown>#}
+{#						<button class="btn btn-default dropdown-toggle" type="button" id="f1" data-toggle="dropdown" aria-expanded="true">#}
+{#						<span id=option-value-f1>US (+1)</span>#}
+{#							<span class="caret"></span>#}
+{#						</button>#}
+{#						<ul class="dropdown-menu" data-displaytarget="#option-value-f1" data-inputtarget=".f1-target" role="menu" aria-labelledby="f1">#}
+{#							<li role="presentation" data-placeholder="US ( +1)" data-value="1" class=disabled>US ( +1)</li>#}
+{#						</ul>#}
+{#					</div>#}
+
+{#					<input type=tel class="text phoneNumber" name="tel" placeholder="Phone number" required>#}
+{##}
+{#					<input type=submit class="submit appended" value=submit>#}
+
+				</div>
+
+			</form>
+		</div>
+
+
+	</div>
+	<div class="footer text-center">
+	<p class="fmenu">
+		更多内容，敬请期待-惬意嗨go-2017
+	</p>
+    <p>蜀ICP备17036207号-1</p>
+
+	</div>
+
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script>window.jQuery || document.write('<script src="{{ url_for('static', filename='js/vendor/jquery-1.11.1.min.js') }}"><\/script>')</script>
+
+	<script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/dropdown.js') }}"></script>
+	<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+	<!-- //-end- concat_js -->
+</body>
+</html>

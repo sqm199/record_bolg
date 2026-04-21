@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}HiGO-home{% endblock %}
+{% block head %}
+  {{ super() }}
+  <!--<style type="text/css">-->
+    <!--.important { color: #336699; }-->
+  <!--</style>-->
+{% endblock %}
+{% block content %}
+   <div class="col-md-3">
+        <h2>排行查询</h2>
+        <ul class="nav nav-tabs nav-stacked">
+            <li><a href="{{ url_for('home') }}">欧美票房排行【11月10日-11月12日】</a></li>
+            <li><a href='#'>Another Link 2</a></li>
+            <li><a href='#'>Another Link 3</a></li>
+        </ul>
+    </div>
+    <div id="content" class="row-fluid">
+        <div class="col-md-9">
+            <div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12">
+			<table class="table table-striped">
+				<thead>
+					<tr class="success">
+						<th>
+							排名
+						</th>
+						<th>
+							电影名
+						</th>
+						<th>
+							票房
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+                {% for item in value %}
+					<tr>
+						<td>
+                            {{ item.index }}
+						</td>
+						<td>
+							{{ item.Name }}
+						</td>
+                        {% if item.MoneyType == 1 %}
+						<td>
+							{{ item.Money }}万/美元
+						</td>
+                    {% elif item.MoneyType == 2 %}
+                        <td>
+							{{ item.Money }}亿/美元
+						</td>
+                    {% endif %}
+					</tr>
+                {% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+        </div>
+        <!--<div class="col-md-3">-->
+            <!--<h2>Sidebar</h2>-->
+        <!--</div>-->
+    </div>
+{% endblock %}

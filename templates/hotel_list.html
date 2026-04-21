@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<meta  http-equiv="content-Type" content="text/html"; charset="utf-8" >
+<html>
+<head>
+<script src="{{url_for('static', filename='js/jquery.min.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/test.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layerConfig.js.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layer.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.min.js')}}">
+</script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/main.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.min.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.min.css')}}">
+</head>
+<title>测试</title>
+<body>
+<div class="bth-outest">
+  <div class="bth-out0">
+   <a href="{{url_for('home')}}" class="top" id="logo">测试社区</a>
+  </div>
+  <div>
+  <ul>
+   <li><a href="{{url_for('trunk')}}" class="top">测试主干</a></li>
+   <li><a href="#" class="top">用例维护</a></li>
+   <li><a href="#" class="top">测试脚本</a></li>
+   <li><a href="{{ url_for('plan') }}" class="top">项目计划</a></li>
+   <li><a href="{{ url_for('hotel_list') }}" class="top">酒店信息</a></li>
+  </ul>
+ </div>
+</div>
+<div class="bth-next1">
+ <div class="left">
+  <ul>
+   <p class="aleft"></p><br/>
+   <p class="aleft">.....：</p>
+ </ul>
+ </div>
+</div>
+<div class="bth-next2">
+ <div calss="maintext" color="#1D6040" size="10">
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12">
+			<form class="form-search">
+                <label>入住人姓名查询：</label>
+				<input class="input-medium search-query" type="text" id="systemname"/> <button class="query" type="button" onclick="query()">查找</button>
+			</form>
+			<table class="table table-striped">
+				<thead>
+					<tr class="success">
+						<th>
+							账号
+						</th>
+						<th>
+							携程订单号
+						</th>
+						<th>
+							酒店名
+						</th>
+						<th>
+							入住人姓名
+						</th>
+                        	<th>
+							预订时间
+						</th>
+                        <th>
+							房费
+						</th>
+                         <th>
+							订单状态
+						</th>
+                           <th>
+							发票类型
+						</th>
+                          <th>
+							是否申请
+						</th>
+                         <th>
+							备注
+						</th>
+                        <th>
+                            修改时间
+                        </th>
+					</tr>
+				</thead>
+				<tbody>
+                {% for item in value %}
+					<tr>
+						<td>
+                            {{ item.Account }}
+						</td>
+                        <td>
+                            {{ item.OrderID }}
+						</td>
+						<td style="width: 100px;">
+							{{ item.HotelName }}
+						</td>
+						<td>
+							{{ item.Name }}
+						</td>
+						<td>
+							{{ item.LiveTime }}
+						</td>
+                        <td>
+							{{ item.LiveFee }}
+						</td>
+                        <td>
+							{{ item.OrderStatus }}
+						</td>
+                        <td>
+                            {{ item.BillType }}
+                         </td>
+                        <td>
+                            {{ item.IsApplyBll }}
+						</td>
+                        <td>
+                          {{ item.Remark }}
+						</td>
+                    <td>
+                        {{ item.ModifyTime }}
+                    </td>
+					</tr>
+                {% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+ </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}HiGO-home{% endblock %}
+{% block head %}
+  {{ super() }}
+        <script src="{{url_for('static', filename='js/photo.js')}}">
+    </script>
+  <!--<style type="text/css">-->
+    <!--.important { color: #336699; }-->
+  <!--</style>-->
+{% endblock %}
+{% block content %}
+   <div class="col-md-3">
+        <h2>照片查询</h2>
+        <ul class="nav nav-tabs nav-stacked">
+            <li><a href="{{ url_for('photo') }}">图区一</a></li>
+            <li><a href='#'>Another Link 2</a></li>
+            <li><a href='#'>Another Link 3</a></li>
+            <li><button class="alert-info" type="button" id="uploaded_file" onclick="uploaded_file()">uploaded_photo</button></li>
+        </ul>
+    </div>
+    <div id="content" class="row-fluid">
+        <div class="col-md-9">
+            <div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12">
+			<table class="table table-striped" style="table-layout:fixed;">
+				<thead>
+					<tr class="success">
+						<th>
+							图片
+						</th>
+						<th style="width: 550px">
+							说明
+						</th>
+                        <th style="width: 70px">
+							操作
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+                {% for item in value %}
+					<tr>
+						<td>
+                            <img width="630" src="{{"/uploads/{0}".format(item.Name)}}" />
+						</td>
+                        <td id="{{ item.KeyID }}" contentEditable="false">
+							{{ item.Remark }}
+						</td>
+                        <td>
+                            <a id="save" style="display: none;" href="javascript:void(0);" onclick="save_remark('{{ item.KeyID }}')">保存</a>
+                            <a style="display: block;" href="javascript:void(0);" onclick="change_remark('{{ item.KeyID }}')">编辑</a>
+							<a style="display: block;" href="javascript:void(0);" onclick="delete_photo('{{ item.KeyID }}')">删除</a>
+						</td>
+					</tr>
+                {% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+        </div>
+        <!--<div class="col-md-3">-->
+            <!--<h2>Sidebar</h2>-->
+        <!--</div>-->
+    </div>
+{% endblock %}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<meta  http-equiv="content-Type" content="text/html"; charset="utf-8" >
+<html>
+<head>
+<script src="{{url_for('static', filename='js/jquery.min.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/test.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layerConfig.js.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layer.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.min.js')}}">
+</script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/main.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.min.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.min.css')}}">
+</head>
+<title>测试</title>
+<body>
+<div class="bth-outest">
+  <div class="bth-out0">
+   <a href="{{url_for('home')}}" class="top" id="logo">测试社区</a>
+  </div>
+  <div>
+  <ul>
+   <li><a href="{{url_for('trunk')}}" class="top">测试主干</a></li>
+   <li><a href="#" class="top">用例维护</a></li>
+   <li><a href="#" class="top">测试脚本</a></li>
+   <li><a href="{{ url_for('plan') }}" class="top">项目计划</a></li>
+   <li><a href="{{ url_for('hotel_list') }}" class="top">酒店信息</a></li>
+  </ul>
+ </div>
+</div>
+<div class="bth-next1">
+ <div class="left">
+  <ul>
+   <p class="aleft"></p><br/>
+   <p class="aleft">.....：</p>
+ </ul>
+ </div>
+</div>
+<div class="bth-next2">
+ <div calss="maintext" color="#1D6040" size="10">
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12">
+			<form class="form-search">
+                <label>系统中文名查询：</label>
+				<input class="input-medium search-query" type="text" id="systemname"/> <button class="query" type="button" onclick="query()">查找</button>
+			</form>
+			<table class="table table-striped">
+				<thead>
+					<tr class="success">
+						<th>
+							编号
+						</th>
+						<th>
+							系统英文名
+						</th>
+						<th>
+							系统中文名
+						</th>
+						<th>
+							研发地址
+						</th>
+                        						<th>
+							测试地址
+						</th>
+                        						<th>
+							操作
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+                {% for item in value %}
+					<tr>
+						<td>
+                            {{ item.index }}
+						</td>
+						<td>
+							{{ item.EnglishSystemName }}
+						</td>
+						<td>
+							{{ item.SystemName }}
+						</td>
+						<td>
+							{{ item.YFTrunkAddress }}
+						</td>
+                        						<td>
+							{{ item.CSTrunkAddress }}
+						</td>
+                        						<td>
+                                                    <a href="javascript:void(0);" onclick="compare('{{ item.YFTrunkAddress }}', '{{ item.CSTrunkAddress }}')">对比</a>
+						</td>
+					</tr>
+                {% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+ </div>
+</div>
+</body>
+</html>

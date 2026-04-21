@@ -1,0 +1,136 @@
+body
+{
+  background-color: #f0f2f5;
+}
+ul
+{
+  list-style-type:none;
+  margin:0;
+  padding:0;
+  color:red;
+}
+li
+{
+  display:inline;
+  float:left;
+}
+a.top
+{
+  height:50px;
+  display:block;
+  width:300px;
+  text-align:center;
+  background-color:#985;
+  color:green;
+  font-size:24px;
+  text-decoration:none;
+  font-family:fantasy;
+}
+
+a.top:hover
+{
+   background-color:#E6C460;
+}
+
+.bth-outest
+{
+   position:fixed;
+   max-width: 1600px;
+   width: 100%;
+   max-width: 2000px;
+   margin-left: auto;
+   margin-right: auto;
+   display: table;
+   background-color:#985;
+}
+
+a.top#logo
+{
+padding-left:auto;
+font-size:37px;
+}
+
+p.aleft
+{
+  display:block;
+  font-size:24px;
+  text-decoration:none;
+  font-family:"Microsoft Yahei Light","Microsoft Yahei", sans-serif;
+}
+
+div.left
+{
+  padding-left: 60px;
+  position:relative;
+  clear:both;
+  height:96%;
+  width:290px;
+
+}
+
+.bth-next1
+{
+  border-right:5px solid #62A3BE;
+  width: 300px;
+  position: fixed;
+  height: 100%;
+  min-height: 600px;
+  top: 110px;
+  background:url('../img/white.jpg') no-repeat 50%;
+}
+
+div.bth-next2
+{
+   font-family:"Microsoft Yahei Light","Microsoft Yahei", sans-serif;
+   height:100%;
+   padding-left:350px;
+   width:1800px;
+   line-height: 1.42857143;
+   vertical-align:middle;
+   border-top:1px solid #ddd;
+   word-break: break-all;
+   /*background:url('../img/black.jpg') no-repeat 50% 10px;*/
+}
+*
+{
+    box-sizing:border-box;
+}
+.form-control
+{
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+    display: block;
+    width: 100%;
+    height: 34px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+}
+.col-sm-2
+{
+    position: relative;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+button,select
+{
+    text-transform:none;
+}
+td,th
+{
+    display: table-cell;
+}
+table
+{
+    font-size: inherit;
+}
+.form-search
+{
+    padding-top: 150px;
+    padding-bottom: 40px;
+    margin-bottom:0;
+    -webkit-border-radius:15px;
+    -moz-border-radius:15px;
+    -moz-border-radius:15px;
+    border-radius:15px;
+    vertical-align:middle;
+}

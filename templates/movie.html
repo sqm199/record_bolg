@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<meta  http-equiv="content-Type" content="text/html"; charset="utf-8" >
+<html>
+<head>
+<script src="{{url_for('static', filename='js/jquery.min.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/test.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layerConfig.js.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/layer/layer.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.js')}}">
+</script>
+<script src="{{url_for('static', filename='js/bootstrap.min.js')}}">
+</script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/movie.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.min.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.css')}}">
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.min.css')}}">
+</head>
+<title>惬意嗨go</title>
+<body>
+<div class="bth-outest">
+  <div class="bth-out0">
+   <a href="{{url_for('home')}}" class="top" id="logo">嗨go社区</a>
+  </div>
+  <div>
+  <ul>
+   <li><a href="{{url_for('movie')}}" class="top">惬意电影</a></li>
+   <li><a href="#" class="top">惬意音乐</a></li>
+   <li><a href="#" class="top">惬意IT</a></li>
+   <li><a href="#" class="top">惬意篮球</a></li>
+   <li><a href="#" class="top">嗨go产品</a></li>
+  </ul>
+ </div>
+</div>
+<div class="bth-next1">
+ <div class="left">
+  <ul>
+   <p class="aleft"></p><br/>
+   <p class="aleft">.....：</p>
+ </ul>
+ </div>
+</div>
+<div class="bth-next2">
+ <div calss="maintext" color="#1D6040" size="10">
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12">
+			<form class="form-search">
+                <label>电影名查询：</label>
+				<input class="input-medium search-query" type="text" id="movie_name"/> <button class="query" type="button" onclick="query()">查找</button>
+			</form>
+			<table class="table table-striped">
+				<thead>
+					<tr class="success">
+						<th>
+							排名
+						</th>
+						<th>
+							电影名
+						</th>
+						<th>
+							票房
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+                {% for item in value %}
+					<tr>
+						<td>
+                            {{ item.index }}
+						</td>
+						<td>
+							{{ item.Name }}
+						</td>
+                        {% if item.MoneyType == 1 %}
+						<td>
+							{{ item.Money }}万/美元
+						</td>
+                    {% elif item.MoneyType == 2 %}
+                        <td>
+							{{ item.Money }}亿/美元
+						</td>
+                    {% endif %}
+					</tr>
+                {% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+ </div>
+</div>
+</body>
+</html>

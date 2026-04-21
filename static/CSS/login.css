@@ -1,0 +1,34 @@
+body
+{
+    background-image:url('../img/login_back.jpg');
+}
+div.img
+{
+   font-family: Georgia;
+   font-weight:bold;
+  margin:3px;
+  border:1px solid #bebebe;
+  height:auto;
+  width:auto;
+  text-align:center;
+  padding-top:10%;
+}
+#login
+{
+   padding-top:8%;
+   font-family: Georgia;
+   font-weight:bold;
+   color:red;
+   text-align:center;
+}
+.loginbutton
+{
+   font-family: Georgia;
+   font-weight:bold;
+   text-align:center;
+   color:blue;
+   margin:0 auto;
+   width:110px;
+   height:10%;
+   display:block;
+}

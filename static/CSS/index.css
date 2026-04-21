@@ -1,0 +1,47 @@
+*
+{
+    margin: 0;
+    padding: 0;
+}
+
+body
+{
+    font-family: "microsoft yahei","Trebuchet MS", "Myriad Pro", Arial, sans-serif;
+    font-size: 14px;
+    color: #333;
+    text-shadow: 1px 1px 1px #fff;
+    overflow-y: scroll;
+}
+p{
+  foot-weight:bold;
+  padding-left:1000px;
+  margin:100px;
+}
+input
+{
+ text-align:center;
+}
+.bth-login
+{
+padding-top:20%;
+text-align:center;
+margin:10px;
+}
+.form_wrapper
+{
+        padding: 10px 10px 10px 10px;
+        background-color: #39C;
+        color: #fff;
+        font-size: 25px;
+        border-bottom: 1px solid #ddd;
+		font-family: Arial;
+}
+.heh
+{
+	font-weight:bold;
+    padding: 80px 60px 10px 45%;
+}
+.bth-login1
+{
+ margin:10px;
+}

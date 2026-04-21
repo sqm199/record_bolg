@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>惬意嗨Go-登录</title>
+        <!-- CSS -->
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='assets/css/reset.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='assets/css/supersized.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='assets/css/style.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/styles.css')}}">
+		<!-- <style type="text/css">
+		body,td,th { font-family: "Source Sans Pro", sans-serif; }
+		/* body { background-color: #2B2B2B; } */
+		</style> -->
+</head>
+<body>
+        <div class="page-container">
+		<div class="wrapper">
+			<div class="container">
+				<strong><span style="font-weight: bold;font-size: 25px;">嗨Go-登录</span></strong>
+                <iframe id="id_iframe" name="nm_iframe" style="display:none;"></iframe>
+				<form class="form" action="#" method="post" target="nm_iframe">
+					<input type="text" name="useraccount" id="useraccount" placeholder="Username">
+					<input type="password" name="password" id="password"  placeholder="Password">
+					<button type="submit" id="login-button">Login</button>
+				</form>
+                                <p style="padding-top: auto">蜀ICP备17036207号-1</p>
+			</div>
+	  </div>
+
+        </div>
+        <script src="{{url_for('static', filename='js/layer-min.js')}}">
+</script>
+        <script src="{{url_for('static', filename='js/layer.js')}}">
+</script>
+        <script src="{{url_for('static', filename='js/jquery-2.1.1.min.js')}}">
+</script>
+        <script src="{{url_for('static', filename='assets/js/supersized.3.2.7.min.js')}}">
+</script>
+        <script src="{{url_for('static', filename='assets/js/supersized-init.js')}}">
+</script>
+        <script src="{{url_for('static', filename='assets/js/scripts.js')}}">
+</script>
+</html>

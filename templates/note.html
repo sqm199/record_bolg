@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}HiGO-home{% endblock %}
+{% block head %}
+  {{ super() }}
+        <script src="{{url_for('static', filename='js/photo.js')}}">
+    </script>
+  <!--<style type="text/css">-->
+    <!--.important { color: #336699; }-->
+  <!--</style>-->
+{% endblock %}
+{% block content %}
+   <div class="col-md-3">
+        <h2>随笔记录</h2>
+        <ul class="nav nav-tabs nav-stacked">
+            <li><a href="{{ url_for('note') }}">公开区</a></li>
+            <li><a href='#'>个人区（暂未开放）</a></li>
+        </ul>
+    </div>
+    <div id="content" class="row-fluid">
+        <div class="col-md-9" style="width: 1080px">
+            <div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span12">
+			<table class="table table-striped" style="table-layout:fixed;">
+				<thead>
+					<tr class="success">
+						<th>
+							标题
+						</th>
+						<th>
+							作者
+						</th>
+                        <th>
+							时间
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+                {% for item in value %}
+					<tr>
+						<td>
+                            <a href="{{ "/notes/{0}".format(item.Name) }}">{{ item.Name }}</a>
+						</td>
+                        <td id="{{ item.KeyID }}">
+							{{ item.AddPerson }}
+						</td>
+                        <td>
+                            {{ item.AddTime }}
+						</td>
+					</tr>
+                {% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+        </div>
+        <!--<div class="col-md-3">-->
+            <!--<h2>Sidebar</h2>-->
+        <!--</div>-->
+    </div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AAGQ,oFAAkB;EACd,gBAAgB,EAJjB,OAAO;EAKN,KAAK,EAAC,IAAI;EACV,SAAS,EAAE,IAAI;AAEnB,oFAAkB;EACd,UAAU,EAAE,+BAA+B;AAE/C,wFAAoB;EAChB,UAAU,EAAE,MAAM;AAEtB,gFAAgB;EACZ,UAAU,EAAE,MAAM;EAClB,SAAS,EAAC,IAAI;EACd,oHAAiB;IACb,gBAAgB,EAlBrB,OAAO;IAmBF,YAAY,EAnBjB,OAAO",
+"sources": ["layer-for-slwy.scss"],
+"names": [],
+"file": "layer-for-slwy.css"
+}
