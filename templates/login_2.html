@@ -15,7 +15,7 @@
     .login-sub  { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.75rem; }
     .field-label { color: var(--text-muted); font-size: 0.82rem; display: block; margin-bottom: 0.35rem; }
     .error-msg { color: var(--danger); font-size: 0.82rem; min-height: 1.2rem; margin-top: 0.5rem; }
-    .btn-accent { width: 100%; justify-content: center; padding: 0.65rem; margin-top: 0.5rem; font-size: 0.95rem; }
+    .btn-accent { width: 100%; display: block; justify-content: center; padding: 0.65rem; margin-top: 0.5rem; font-size: 0.95rem; }
   </style>
 </head>
 <body>
@@ -25,11 +25,11 @@
     <form id="loginForm" novalidate>
       <div style="margin-bottom:1rem">
         <label class="field-label" for="useraccount">用户名</label>
-        <input type="text" id="useraccount" class="form-control-dark" placeholder="Username" autocomplete="username">
+        <input type="text" id="useraccount" name="useraccount" class="form-control-dark" placeholder="Username" autocomplete="username">
       </div>
       <div style="margin-bottom:0.5rem">
         <label class="field-label" for="password">密码</label>
-        <input type="password" id="password" class="form-control-dark" placeholder="Password" autocomplete="current-password">
+        <input type="password" id="password" name="password" class="form-control-dark" placeholder="Password" autocomplete="current-password">
       </div>
       <div class="error-msg" id="errorMsg"></div>
       <button type="submit" class="btn-accent" id="loginBtn">登录</button>
@@ -58,7 +58,7 @@
         if (data.code === 1) {
           window.location.href = '/photo';
         } else {
-          errEl.textContent = '用户名或密码错误';
+          errEl.textContent = data.msgs || '用户名或密码错误';
           btn.disabled = false;
           btn.textContent = '登录';
         }
