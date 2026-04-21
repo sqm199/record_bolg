@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory
+from werkzeug.utils import secure_filename
 from Module import MPhotoInfo, MnoteInfo
 from Sqls import storage
 import markdown
+import html as html_module
 import os
 import time
 import random
@@ -85,6 +87,8 @@ def delete_photo():
     if not login_cat():
         return '{"Code":0,"Message":"未登录"}'
     key_id = request.form.get("KeyID")
+    if not key_id:
+        return '{"Code":0,"Message":"缺少KeyID"}'
     records = storage.load('photoinfo')
     for r in records:
         if r['KeyID'] == key_id:
@@ -125,12 +129,15 @@ def upload_file():
     group_name = (request.form.get('group_name', '') or '').strip() or '图片区一'
     if not file or not allowed_file(file.filename):
         return '{"code":0,"msgs":"请选择有效的图片文件（png/jpg/jpeg/gif/webp）"}'
+    safe_name = secure_filename(file.filename)
+    if not safe_name:
+        return '{"code":0,"msgs":"文件名无效"}'
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], safe_name))
     now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     record = {
         "KeyID":             mark_keyid(),
-        "Name":              file.filename,
+        "Name":              safe_name,
         "ProductType":       1,
         "ProductTypeRemark": group_name,
         "Remark":            remark,
@@ -180,6 +187,14 @@ def note_save():
     content = request.form.get('content', '')
     if not title:
         return '{"code":0,"msgs":"标题不能为空"}'
+    safe_title = secure_filename(title)
+    if not safe_title:
+        return '{"code":0,"msgs":"标题包含非法字符"}'
+    escaped_title = html_module.escape(title)
+
+    filepath = os.path.join(app.config['NOTE_PATH'], f'{safe_title}.html')
+    if os.path.exists(filepath):
+        return '{"code":0,"msgs":"同名笔记已存在，请使用不同标题"}'
 
     html_body = markdown.markdown(content, extensions=['extra'])
     full_html = f"""<!doctype html>
@@ -187,7 +202,7 @@ def note_save():
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>{title}</title>
+  <title>{escaped_title}</title>
   <style>
     body{{font-family:'Noto Sans SC',sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.8}}
     img{{max-width:100%}}
@@ -197,13 +212,13 @@ def note_save():
   </style>
 </head>
 <body>
-  <h1>{title}</h1>
+  <h1>{escaped_title}</h1>
   {html_body}
 </body>
 </html>"""
 
     os.makedirs(app.config['NOTE_PATH'], exist_ok=True)
-    with open(os.path.join(app.config['NOTE_PATH'], f'{title}.html'), 'w', encoding='utf-8') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(full_html)
 
     now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
@@ -212,7 +227,7 @@ def note_save():
         "Name":              title,
         "ProductType":       1,
         "ProductTypeRemark": "公开区",
-        "Path":              title,
+        "Path":              safe_title,
         "Remark":            "",
         "IsDelete":          0,
         "AddTime":           now,
@@ -230,6 +245,8 @@ def note_delete():
     if not login_cat():
         return '{"code":0,"msgs":"未登录"}'
     key_id = request.form.get('KeyID')
+    if not key_id:
+        return '{"code":0,"msgs":"缺少KeyID"}'
     records = storage.load('noteinfo')
     for r in records:
         if r['KeyID'] == key_id:
