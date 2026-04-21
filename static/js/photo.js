@@ -58,7 +58,7 @@
     })
       .then(r => r.json())
       .then(data => {
-        if (data.Code === 1) {
+        if (data.code === 1) {
           msgEl.style.color = 'var(--success)';
           msgEl.textContent = '已保存';
           const card = document.querySelector(`.photo-card[data-keyid="${currentKeyID}"]`);
@@ -68,7 +68,7 @@
           }
         } else {
           msgEl.style.color = 'var(--danger)';
-          msgEl.textContent = '保存失败';
+          msgEl.textContent = data.msgs || '保存失败';
         }
       })
       .catch(() => {
@@ -92,11 +92,16 @@
     })
       .then(r => r.json())
       .then(data => {
-        if (data.Code === 1) {
+        if (data.code === 1) {
           deleteModal.hide();
           const card = document.querySelector(`.photo-card[data-keyid="${currentKeyID}"]`);
           if (card) card.remove();
+        } else {
+          alert(data.msgs || '删除失败，请重试');
         }
+      })
+      .catch(() => {
+        alert('网络错误，请重试');
       });
   });
 })();

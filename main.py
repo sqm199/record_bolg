@@ -14,7 +14,7 @@ NOTE_PATH     = os.path.join(os.getcwd(), 'note')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 app = Flask(__name__)
-app.secret_key = "shiyangS"
+app.secret_key = os.environ.get("SECRET_KEY", "shiyangS-dev-only-change-in-prod")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['NOTE_PATH']     = NOTE_PATH
 
@@ -85,22 +85,22 @@ def photo():
 @app.route('/delete_photo', methods=['POST'])
 def delete_photo():
     if not login_cat():
-        return '{"Code":0,"Message":"未登录"}'
+        return '{"code":0,"msgs":"未登录"}'
     key_id = request.form.get("KeyID")
     if not key_id:
-        return '{"Code":0,"Message":"缺少KeyID"}'
+        return '{"code":0,"msgs":"缺少KeyID"}'
     records = storage.load('photoinfo')
     for r in records:
         if r['KeyID'] == key_id:
             r['IsDelete'] = 1
     storage.save('photoinfo', records)
-    return '{"Code":1,"Message":"删除成功！"}'
+    return '{"code":1,"msgs":"删除成功！"}'
 
 
 @app.route('/change_save_remark', methods=['POST'])
 def change_save_remark():
     if not login_cat():
-        return '{"Code":0,"Message":"未登录"}'
+        return '{"code":0,"msgs":"未登录"}'
     key_id = request.form.get("KeyID")
     remark = str(request.form.get("Remark", "")).strip()
     records = storage.load('photoinfo')
@@ -108,7 +108,7 @@ def change_save_remark():
         if r['KeyID'] == key_id:
             r['Remark'] = remark
     storage.save('photoinfo', records)
-    return '{"Code":1,"Message":"更新成功！"}'
+    return '{"code":1,"msgs":"更新成功！"}'
 
 
 def allowed_file(filename):
