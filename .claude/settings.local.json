@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import ast; ast.parse\\(open\\('main.py'\\).read\\(\\)\\); print\\('main.py 语法正确'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('Sqls/storage.py'\\).read\\(\\)\\); print\\('storage.py 语法正确'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(uv add *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(python *)",
+      "Bash(python3 *)"
+    ]
+  }
+}
