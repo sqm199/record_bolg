@@ -13,7 +13,7 @@
 <body>
 
 <nav class="app-nav" id="appNav">
-  <a class="brand" href="{{ url_for('photo') }}">🦌 羚羊之家</a>
+  <a class="brand" href="/">🦌 羚羊之家</a>
   <div class="nav-links" id="navLinks">
     <a class="nav-link {% if request.endpoint == 'photo' %}active{% endif %}"
        href="{{ url_for('photo') }}">Photo</a>
