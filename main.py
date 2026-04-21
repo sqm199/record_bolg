@@ -1,232 +1,246 @@
 # -*- coding: utf-8 -*-
-from flask import Flask
-from flask import abort, redirect, url_for, render_template, session, request
-from Sqls import pymysql
-from Module import MMovieInfo, MPhotoInfo, MnoteInfo
-from flask import send_from_directory
+from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory
+from Module import MPhotoInfo, MnoteInfo
+from Sqls import storage
+import markdown
 import os
 import time
 import random
-from service import run_road
-from service.kline import GateKine
-from service.req_create import ReqCreate
-import json
 
-
-UPLOAD_FOLDER = os.getcwd() + '\photo'
-NOTE_PATH = os.getcwd() + '\\note'
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'photo')
+NOTE_PATH     = os.path.join(os.getcwd(), 'note')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 app = Flask(__name__)
 app.secret_key = "shiyangS"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['NOTE_PATH'] = NOTE_PATH
+app.config['NOTE_PATH']     = NOTE_PATH
+
+ADMIN_ACCOUNT = "admin"
+ADMIN_PASSWORD = "admin@123"
 
 
-# 生成keyID
 def mark_keyid():
     a = time.strftime("%Y%m%d%H%M%S", time.localtime())
     b = str(random.randint(1000, 9999))
     return a + b
 
 
-# 登陆校验
 def login_cat():
-    useraccount = session.get("useraccount")
-    password = session.get("password")
-    sql_str = "SELECT * FROM `userinfo` WHERE UserAccount='{0}' AND LoginPWD ='{1}' AND IsDelete=0;".format(useraccount, password)
-    sql = pymysql.Sql(sql_str, "userdata")
-    data = sql.execute()
-    if len(data) == 1:
-        return True
-    else:
-        return False
+    return session.get("useraccount") == ADMIN_ACCOUNT
 
+
+# ── Index ──────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
-    return redirect(url_for('tools'))
+    return redirect(url_for('photo'))
 
 
-# 登陆页面
+# ── Auth ───────────────────────────────────────────────────────────────────
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     return render_template('login_2.html')
 
 
-# 照片模块
-@app.route('/photo', methods=['GET', 'POST'])
+@app.route('/login_confirm', methods=['POST'])
+def login_confirm():
+    useraccount = request.form.get('useraccount', '')
+    password    = request.form.get('password', '')
+    if useraccount == ADMIN_ACCOUNT and password == ADMIN_PASSWORD:
+        session["useraccount"] = useraccount
+        session["username"]    = useraccount
+        return '{"code": 1, "msgs": "登陆成功"}'
+    return '{"code": 0, "msgs": "用户名或密码错误"}'
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
+# ── Photo ──────────────────────────────────────────────────────────────────
+
+@app.route('/photo')
 def photo():
-    if login_cat():
-        sql_str = "SELECT KeyID,Name,ProductType,Remark FROM `photoinfo` WHERE IsDelete=0;"
-        sql = pymysql.Sql(sql_str, "movie")
-        result = sql.execute()
-        value_list = []
-        i = 1
-        for item in result:
-            mPhoto = MPhotoInfo.Photo()
-            mPhoto.KeyID = item[0]
-            mPhoto.Name = item[1]
-            mPhoto.ProductType = item[2]
-            mPhoto.Remark = item[3]
-            value_list.append(mPhoto)
-            i += 1
-        return render_template('photo.html', value=value_list)
-    else:
+    if not login_cat():
         return redirect(url_for('login'))
+    records = [r for r in storage.load('photoinfo') if not r.get('IsDelete')]
+    value_list = []
+    for item in records:
+        p = MPhotoInfo.Photo()
+        p.KeyID             = item['KeyID']
+        p.Name              = item['Name']
+        p.ProductType       = item['ProductType']
+        p.ProductTypeRemark = item.get('ProductTypeRemark', '图片区一') or '图片区一'
+        p.Remark            = item.get('Remark', '')
+        value_list.append(p)
+    return render_template('photo.html', value=value_list)
 
 
-# 删除照片
-@app.route('/delete_photo', methods=['GET', 'POST'])
+@app.route('/delete_photo', methods=['POST'])
 def delete_photo():
-    if request.method == "POST":
-        KeyID = request.form["KeyID"]
-        sql_str = "UPDATE `photoinfo` SET IsDelete=1 WHERE KeyID='{0}' LIMIT 1;".format(KeyID)
-        sql = pymysql.Sql(sql_str, "movie")
-        sql.execute()
-        return '''{"Code":1,"Message":"删除成功！"}'''
-    else:
-        return '''{"Code":999,"Message":"999"}'''
+    if not login_cat():
+        return '{"Code":0,"Message":"未登录"}'
+    key_id = request.form.get("KeyID")
+    records = storage.load('photoinfo')
+    for r in records:
+        if r['KeyID'] == key_id:
+            r['IsDelete'] = 1
+    storage.save('photoinfo', records)
+    return '{"Code":1,"Message":"删除成功！"}'
 
 
-@app.route('/change_save_remark', methods=['GET', 'POST'])
+@app.route('/change_save_remark', methods=['POST'])
 def change_save_remark():
-    if request.method == "POST":
-        KeyID = request.form["KeyID"]
-        Remark = str(request.form["Remark"]).replace("\t", "").replace("\n", "")
-        sql_str = "UPDATE `photoinfo` SET Remark='{0}' WHERE KeyID='{1}' LIMIT 1;".format(Remark, KeyID)
-        sql = pymysql.Sql(sql_str, "movie")
-        sql.execute()
-        return '''{"Code":1,"Message":"更新成功！"}'''
-    else:
-        return '''{"Code":999,"Message":"999"}'''
+    if not login_cat():
+        return '{"Code":0,"Message":"未登录"}'
+    key_id = request.form.get("KeyID")
+    remark = str(request.form.get("Remark", "")).strip()
+    records = storage.load('photoinfo')
+    for r in records:
+        if r['KeyID'] == key_id:
+            r['Remark'] = remark
+    storage.save('photoinfo', records)
+    return '{"Code":1,"Message":"更新成功！"}'
 
 
-# 校验上传图片文件后缀
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# 查看上传文件
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'],
-                               filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
-# 上传图片弹出层
-@app.route('/upload_file', methods=['GET', 'POST'])
+@app.route('/upload_file', methods=['POST'])
 def upload_file():
-    if request.method == 'POST':
-        file = request.files['file']
-        remark = request.form["remark"]
-        if file and allowed_file(file.filename):
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-            photo_info = MPhotoInfo.Photo()
-            photo_info.KeyID = mark_keyid()
-            photo_info.AddPerson = session["username"]
-            photo_info.ProductType = 1
-            photo_info.ProductTypeRemark = "图片区一"
-            photo_info.Name = file.filename
-            photo_info.Remark = remark
-            sql_str = "INSERT INTO `photoinfo` VALUES ('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}');".format(photo_info.KeyID,
-                                                                                                                photo_info.Name,
-                                                                                                                photo_info.ProductType,
-                                                                                                                photo_info.ProductTypeRemark,
-                                                                                                                photo_info.Remark,
-                                                                                                                photo_info.IsDelete,
-                                                                                                                photo_info.AddTime,
-                                                                                                                photo_info.AddPerson,
-                                                                                                                photo_info.ModifyTime)
-            sql = pymysql.Sql(sql_str, "movie")
-            sql.execute()
-            return redirect(url_for('photo'))
-    return '''
-    <!doctype html>
-    <title>上传您的新图片</title>
-    <h1 style="text-align: center">Upload new File</h1>
-    <form style="padding-left: 24%" action="upload_file" method=post enctype=multipart/form-data>
-      <p><input type=file name=file></p>
-      <textarea name="remark" rows="4" cols="32"></textarea>
-      <p><input type=submit value=Upload></p>
-    </form>
-    '''
+    if not login_cat():
+        return '{"code":0,"msgs":"未登录"}'
+    file       = request.files.get('file')
+    remark     = request.form.get('remark', '')
+    group_name = (request.form.get('group_name', '') or '').strip() or '图片区一'
+    if not file or not allowed_file(file.filename):
+        return '{"code":0,"msgs":"请选择有效的图片文件（png/jpg/jpeg/gif/webp）"}'
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+    now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    record = {
+        "KeyID":             mark_keyid(),
+        "Name":              file.filename,
+        "ProductType":       1,
+        "ProductTypeRemark": group_name,
+        "Remark":            remark,
+        "IsDelete":          0,
+        "AddTime":           now,
+        "AddPerson":         session.get("username", "admin"),
+        "ModifyTime":        now
+    }
+    records = storage.load('photoinfo')
+    records.append(record)
+    storage.save('photoinfo', records)
+    return '{"code":1,"msgs":"上传成功"}'
 
 
-# 登陆验证
-@app.route('/login_confirm', methods=['GET', 'POST'])
-def login_confirm():
-    try:
-        if request.method == "POST":
-            useraccount = request.form['useraccount']
-            password = request.form['password']
-            session["useraccount"] = useraccount
-            session["password"] = password
-            return '''{"code": 1, "msgs": "登陆成功"}'''
-        else:
-            return
-    except Exception as e:
-        return e
+# ── Note ───────────────────────────────────────────────────────────────────
 
-
-# 排行榜模块
-@app.route('/home', methods=['GET', 'POST'])
-def home():
-    if login_cat():
-        movie_name = ""
-        if request.args.get("movie_name") is not None:
-            movie_name = request.args.get("movie_name")
-        if movie_name == "":
-            sql_str = "SELECT Name,Money,MoneyType FROM `movieinfo` WHERE remark='11月10日-11月12日/美元' AND IsDelete = 0 GROUP BY Money DESC;"
-        else:
-            sql_str = "SELECT Name,Money,MoneyType FROM `movieinfo` WHERE Name LIKE '%{0}%' AND remark='11月10日-11月12日/美元' AND IsDelete = 0 GROUP BY Money DESC;".format(movie_name)
-        sql = pymysql.Sql(sql_str, "movie")
-        result = sql.execute()
-        value_list = []
-        i = 1
-        for item in result:
-            mMovie = MMovieInfo.Movie()
-            mMovie.index = i
-            mMovie.Name = item[0]
-            mMovie.Money = item[1]
-            mMovie.MoneyType = item[2]
-            value_list.append(mMovie)
-            i += 1
-        return render_template('home.html', value=value_list)
-    else:
-        return redirect(url_for('login'))
-
-
-# 日志模块
-@app.route('/note', methods=['GET', 'POST'])
+@app.route('/note')
 def note():
-    if login_cat():
-        sql_str = "SELECT KeyID,Name,ProductType,AddPerson,AddTime,Path FROM `noteinfo` WHERE IsDelete=0;"
-        sql = pymysql.Sql(sql_str, "movie")
-        result = sql.execute()
-        value_list = []
-        i = 1
-        for item in result:
-            mNote = MnoteInfo.Note()
-            mNote.KeyID = item[0]
-            mNote.Name = item[1]
-            mNote.ProductType = item[2]
-            mNote.AddPerson = item[3]
-            mNote.AddTime = item[4]
-            mNote.Path = item[5]
-            value_list.append(mNote)
-            i += 1
-        return render_template('note.html', value=value_list)
-    else:
+    if not login_cat():
         return redirect(url_for('login'))
+    records = [r for r in storage.load('noteinfo') if not r.get('IsDelete')]
+    value_list = []
+    for item in records:
+        n = MnoteInfo.Note()
+        n.KeyID     = item['KeyID']
+        n.Name      = item['Name']
+        n.ProductType = item.get('ProductType', 1)
+        n.AddPerson = item.get('AddPerson', '')
+        n.AddTime   = item.get('AddTime', '')
+        n.Path      = item.get('Path', item['Name'])
+        value_list.append(n)
+    return render_template('note.html', value=value_list)
 
 
-# 查看日志
+@app.route('/note/new')
+def note_new():
+    if not login_cat():
+        return redirect(url_for('login'))
+    return render_template('note_editor.html')
+
+
+@app.route('/note/save', methods=['POST'])
+def note_save():
+    if not login_cat():
+        return '{"code":0,"msgs":"未登录"}'
+    title   = request.form.get('title', '').strip()
+    content = request.form.get('content', '')
+    if not title:
+        return '{"code":0,"msgs":"标题不能为空"}'
+
+    html_body = markdown.markdown(content, extensions=['extra'])
+    full_html = f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>{title}</title>
+  <style>
+    body{{font-family:'Noto Sans SC',sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.8}}
+    img{{max-width:100%}}
+    pre{{background:#f5f5f5;padding:1rem;border-radius:4px;overflow-x:auto}}
+    code{{background:#f5f5f5;padding:.1rem .3rem;border-radius:3px;font-size:.9em}}
+    blockquote{{border-left:4px solid #ddd;margin:0;padding-left:1rem;color:#555}}
+  </style>
+</head>
+<body>
+  <h1>{title}</h1>
+  {html_body}
+</body>
+</html>"""
+
+    os.makedirs(app.config['NOTE_PATH'], exist_ok=True)
+    with open(os.path.join(app.config['NOTE_PATH'], f'{title}.html'), 'w', encoding='utf-8') as f:
+        f.write(full_html)
+
+    now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    record = {
+        "KeyID":             mark_keyid(),
+        "Name":              title,
+        "ProductType":       1,
+        "ProductTypeRemark": "公开区",
+        "Path":              title,
+        "Remark":            "",
+        "IsDelete":          0,
+        "AddTime":           now,
+        "AddPerson":         session.get("username", "admin"),
+        "ModifyTime":        now
+    }
+    records = storage.load('noteinfo')
+    records.append(record)
+    storage.save('noteinfo', records)
+    return '{"code":1,"msgs":"保存成功"}'
+
+
+@app.route('/note/delete', methods=['POST'])
+def note_delete():
+    if not login_cat():
+        return '{"code":0,"msgs":"未登录"}'
+    key_id = request.form.get('KeyID')
+    records = storage.load('noteinfo')
+    for r in records:
+        if r['KeyID'] == key_id:
+            r['IsDelete'] = 1
+    storage.save('noteinfo', records)
+    return '{"code":1,"msgs":"删除成功"}'
+
+
 @app.route('/notes/<filename>')
 def cat_notes_file(filename):
-    return send_from_directory(app.config['NOTE_PATH'],
-                               filename + ".html")
+    return send_from_directory(app.config['NOTE_PATH'], filename + ".html")
 
 
 if __name__ == '__main__':
