@@ -1,66 +1,123 @@
 {% extends "base.html" %}
-{% block title %}HiGO-home{% endblock %}
-{% block head %}
-  {{ super() }}
-        <script src="{{url_for('static', filename='js/photo.js')}}">
-    </script>
-  <!--<style type="text/css">-->
-    <!--.important { color: #336699; }-->
-  <!--</style>-->
-{% endblock %}
+{% block title %}Photo — 羚羊之家{% endblock %}
+
 {% block content %}
-   <div class="col-md-3">
-        <h2>照片查询</h2>
-        <ul class="nav nav-tabs nav-stacked">
-            <li><a href="{{ url_for('photo') }}">图区一</a></li>
-            <li><a href='#'>Another Link 2</a></li>
-            <li><a href='#'>Another Link 3</a></li>
-            <li><button class="alert-info" type="button" id="uploaded_file" onclick="uploaded_file()">uploaded_photo</button></li>
-        </ul>
-    </div>
-    <div id="content" class="row-fluid">
-        <div class="col-md-9">
-            <div class="container-fluid">
-	<div class="row-fluid">
-		<div class="span12">
-			<table class="table table-striped" style="table-layout:fixed;">
-				<thead>
-					<tr class="success">
-						<th>
-							图片
-						</th>
-						<th style="width: 550px">
-							说明
-						</th>
-                        <th style="width: 70px">
-							操作
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-                {% for item in value %}
-					<tr>
-						<td>
-                            <img width="630" src="{{"/uploads/{0}".format(item.Name)}}" />
-						</td>
-                        <td id="{{ item.KeyID }}" contentEditable="false">
-							{{ item.Remark }}
-						</td>
-                        <td>
-                            <a id="save" style="display: none;" href="javascript:void(0);" onclick="save_remark('{{ item.KeyID }}')">保存</a>
-                            <a style="display: block;" href="javascript:void(0);" onclick="change_remark('{{ item.KeyID }}')">编辑</a>
-							<a style="display: block;" href="javascript:void(0);" onclick="delete_photo('{{ item.KeyID }}')">删除</a>
-						</td>
-					</tr>
-                {% endfor %}
-				</tbody>
-			</table>
-		</div>
-	</div>
+<div class="page-header">
+  <h1>照片</h1>
 </div>
-        </div>
-        <!--<div class="col-md-3">-->
-            <!--<h2>Sidebar</h2>-->
-        <!--</div>-->
+
+{% for group in value | groupby('ProductTypeRemark') %}
+<section class="photo-group">
+  <div class="photo-group-header">
+    <h2>{{ group.grouper }}</h2>
+    <span class="group-count">{{ group.list | length }} 张</span>
+  </div>
+  <div class="photo-grid">
+    {% for item in group.list %}
+    <div class="photo-card"
+         data-keyid="{{ item.KeyID }}"
+         data-name="{{ item.Name }}"
+         data-remark="{{ item.Remark | e }}">
+      <div class="thumb-wrap"
+           onclick="openLightbox('{{ item.KeyID }}', '{{ item.Name | e }}', this.closest('.photo-card').dataset.remark)">
+        <img src="/uploads/{{ item.Name }}" alt="{{ item.Remark | e }}" loading="lazy">
+      </div>
+      <div class="card-remark">{{ item.Remark or '暂无备注' }}</div>
+      <div class="card-actions">
+        <button class="icon-btn" title="编辑备注"
+          onclick="event.stopPropagation(); openLightbox('{{ item.KeyID }}', '{{ item.Name | e }}', this.closest('.photo-card').dataset.remark)">✏️</button>
+        <button class="icon-btn danger" title="删除"
+          onclick="event.stopPropagation(); confirmDelete('{{ item.KeyID }}')">🗑️</button>
+      </div>
     </div>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">📷</div>
+  <div>还没有照片，点击右下角 ＋ 上传</div>
+</div>
+{% endfor %}
+
+<!-- FAB -->
+<button class="fab" data-bs-toggle="modal" data-bs-target="#uploadModal" title="上传照片">＋</button>
+
+<!-- 上传 Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">上传照片</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:1rem">
+          <div>
+            <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">选择图片 *</label>
+            <input type="file" name="file" id="fileInput" accept="image/*" class="form-control-dark" required>
+          </div>
+          <div>
+            <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">相册分组</label>
+            <input type="text" name="group_name" class="form-control-dark" value="图片区一" placeholder="相册分组名称">
+          </div>
+          <div>
+            <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">备注</label>
+            <textarea name="remark" class="form-control-dark" rows="2" placeholder="选填备注"></textarea>
+          </div>
+          <div id="uploadError" style="color:var(--danger);font-size:0.82rem;display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-bs-dismiss="modal">取消</button>
+          <button type="submit" class="btn-accent" id="uploadBtn">上传</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 大图 Modal -->
+<div class="modal fade" id="lightboxModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="lightboxTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <img id="lightboxImg" src="" alt=""
+               style="width:100%;max-height:80vh;object-fit:contain;border-radius:6px;background:#12141e">
+        </div>
+        <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:.75rem">
+          <label style="color:var(--text-muted);font-size:0.82rem">备注</label>
+          <textarea id="lightboxRemark" class="form-control-dark" rows="5"></textarea>
+          <button class="btn-accent" onclick="saveRemark()">保存备注</button>
+          <div id="remarkMsg" style="font-size:0.82rem;min-height:1rem"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认 Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:360px">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">确认删除</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="color:var(--text-muted)">删除后无法恢复，确认继续？</div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn-danger" id="confirmDeleteBtn">删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/photo.js') }}"></script>
 {% endblock %}
