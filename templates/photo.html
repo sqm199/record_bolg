@@ -132,7 +132,7 @@
 <script src="{{ url_for('static', filename='js/photo.js') }}"></script>
 <script>
   // ── Timeline ──────────────────────────────────────────────────────────────
-  const PHOTO_DATA = {{ value | tojson }};
+  const PHOTO_DATA = {{ photo_data | tojson }};
 
   function escHtml(str) {
     return String(str)

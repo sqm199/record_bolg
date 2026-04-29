@@ -81,7 +81,7 @@ def photo():
         p.Remark            = item.get('Remark', '')
         p.AddTime           = item.get('AddTime', '')
         value_list.append(p)
-    return render_template('photo.html', value=value_list)
+    return render_template('photo.html', value=value_list, photo_data=records)
 
 
 @app.route('/delete_photo', methods=['POST'])
@@ -172,7 +172,7 @@ def note():
         n.Path               = item.get('Path', item['Name'])
         n.ProductTypeRemark  = item.get('ProductTypeRemark', '')
         value_list.append(n)
-    return render_template('note.html', value=value_list)
+    return render_template('note.html', value=value_list, note_data=records)
 
 
 @app.route('/note/new')
@@ -303,7 +303,9 @@ def note_update():
     )
     if not record:
         return '{"code":0,"msgs":"笔记不存在"}'
-    path      = record['Path']  # intentionally unchanged on title edit — URL stays stable
+    path = record.get('Path')
+    if not path:
+        return '{"code":0,"msgs":"笔记路径缺失，无法保存"}'
     html_body = markdown.markdown(content, extensions=['extra'])
     full_html = f"""<!doctype html>
 <html lang="zh-CN">
