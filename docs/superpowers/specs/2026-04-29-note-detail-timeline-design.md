@@ -86,10 +86,10 @@ POST /note/update
 参数: KeyID, title, content (Markdown)
 逻辑:
   1. 验证登录
-  2. 验证 KeyID 存在且未删除
+  2. 验证 KeyID 存在且未删除，取出原始 Path 字段
   3. 用 markdown.markdown() 渲染新 HTML body
-  4. 覆写 note/<safe_title>.html 文件
-  5. 更新 noteinfo.json 中 Content、Name、ModifyTime
+  4. 覆写 note/<原始Path>.html 文件（始终用原始 Path，不随标题变化重命名，避免旧链接失效）
+  5. 更新 noteinfo.json 中 Content、Name、ModifyTime（Path 不变）
   6. 返回 {"code":1}
 ```
 
