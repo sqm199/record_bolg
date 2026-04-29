@@ -272,9 +272,11 @@ def cat_notes_file(filename):
     if content:
         html_body = markdown.markdown(content, extensions=['extra'])
     else:
-        filepath = os.path.join(app.config['NOTE_PATH'], filename + '.html')
+        safe_fn   = secure_filename(filename)
+        filepath  = os.path.join(app.config['NOTE_PATH'], safe_fn + '.html')
         if os.path.exists(filepath):
-            raw = open(filepath, encoding='utf-8').read()
+            with open(filepath, encoding='utf-8') as f:
+                raw = f.read()
             m = re.search(r'<body[^>]*>(.*?)</body>', raw, re.DOTALL)
             html_body = m.group(1).strip() if m else raw
         else:
@@ -299,7 +301,7 @@ def note_update():
     )
     if not record:
         return '{"code":0,"msgs":"笔记不存在"}'
-    path      = record['Path']
+    path      = record['Path']  # intentionally unchanged on title edit — URL stays stable
     html_body = markdown.markdown(content, extensions=['extra'])
     full_html = f"""<!doctype html>
 <html lang="zh-CN">
