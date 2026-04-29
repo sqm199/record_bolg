@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ item.Name }} — 羚羊之家{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem">← 返回笔记列表</a>
+  <div id="header-btns">
+    {% if item.get('Content') %}
+    <button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)">✏️ 编辑</button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 读模式 -->
+<div id="read-mode">
+  <div style="margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
+    <h1 style="font-size:1.6rem;font-weight:700;color:var(--text-primary);margin:0 0 0.6rem;line-height:1.35">
+      {{ item.Name }}
+    </h1>
+    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <span style="font-size:0.78rem;color:var(--text-muted)">{{ item.AddPerson }}</span>
+      <span style="color:var(--border)">·</span>
+      <span style="font-size:0.78rem;color:var(--text-muted)">{{ item.AddTime[:10] if item.AddTime else '' }}</span>
+      <span style="color:var(--border)">·</span>
+      <span style="background:var(--bg-surface);border:1px solid var(--border);padding:0.1rem 0.5rem;border-radius:10px;font-size:0.72rem;color:var(--text-muted)">
+        {{ item.ProductTypeRemark }}
+      </span>
+    </div>
+  </div>
+  <div class="note-body" id="note-body">{{ html_body | safe }}</div>
+</div>
+
+<!-- 编辑模式（默认隐藏） -->
+<div id="edit-mode" style="display:none">
+  <div style="margin-bottom:0.85rem">
+    <label style="color:var(--text-muted);font-size:0.8rem;display:block;margin-bottom:.3rem">标题</label>
+    <input type="text" id="edit-title" class="form-control-dark"
+           style="font-size:1rem;font-weight:600" value="{{ item.Name }}">
+  </div>
+  <div style="margin-bottom:0.5rem">
+    <label style="color:var(--text-muted);font-size:0.8rem;display:block;margin-bottom:.3rem">内容</label>
+    <textarea id="edit-content">{{ item.get('Content', '') }}</textarea>
+  </div>
+  <div id="edit-msg" style="font-size:0.8rem;min-height:1.1rem;color:var(--danger)"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+  const NOTE_KEYID = '{{ item.KeyID }}';
+  let easyMDE = null;
+
+  function enterEditMode() {
+    document.getElementById('read-mode').style.display = 'none';
+    document.getElementById('edit-mode').style.display = 'block';
+    document.getElementById('header-btns').innerHTML =
+      '<button class="btn-ghost" onclick="exitEditMode()">取消</button>' +
+      '<button class="btn-accent" onclick="saveEdit()" style="margin-left:.5rem">保存</button>';
+    if (!easyMDE) {
+      easyMDE = new EasyMDE({
+        element: document.getElementById('edit-content'),
+        spellChecker: false,
+        autosave: { enabled: false },
+        toolbar: [
+          'bold', 'italic', 'heading', '|',
+          'quote', 'unordered-list', 'ordered-list', '|',
+          'link', 'image', '|',
+          'preview', 'side-by-side', 'fullscreen'
+        ]
+      });
+    }
+  }
+
+  function exitEditMode() {
+    document.getElementById('edit-mode').style.display = 'none';
+    document.getElementById('read-mode').style.display = 'block';
+    document.getElementById('header-btns').innerHTML =
+      '<button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)">✏️ 编辑</button>';
+  }
+
+  function saveEdit() {
+    const title = document.getElementById('edit-title').value.trim();
+    const msgEl = document.getElementById('edit-msg');
+    if (!title) {
+      msgEl.textContent = '标题不能为空';
+      return;
+    }
+    msgEl.textContent = '';
+
+    fetch('/note/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        KeyID:   NOTE_KEYID,
+        title:   title,
+        content: easyMDE.value()
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.code === 1) {
+        window.location.reload();
+      } else {
+        msgEl.textContent = data.msgs || '保存失败';
+      }
+    })
+    .catch(() => {
+      msgEl.textContent = '网络错误，请重试';
+    });
+  }
+</script>
+{% endblock %}
