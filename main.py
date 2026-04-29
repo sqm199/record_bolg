@@ -8,6 +8,7 @@ import html as html_module
 import os
 import time
 import random
+import re
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'photo')
 NOTE_PATH     = os.path.join(os.getcwd(), 'note')
@@ -228,6 +229,7 @@ def note_save():
         "ProductType":       1,
         "ProductTypeRemark": "公开区",
         "Path":              safe_title,
+        "Content":           content,
         "Remark":            "",
         "IsDelete":          0,
         "AddTime":           now,
@@ -257,7 +259,77 @@ def note_delete():
 
 @app.route('/notes/<filename>')
 def cat_notes_file(filename):
-    return send_from_directory(app.config['NOTE_PATH'], filename + ".html")
+    if not login_cat():
+        return redirect(url_for('login'))
+    records = storage.load('noteinfo')
+    item = next(
+        (r for r in records if r.get('Path') == filename and r.get('IsDelete', 0) == 0),
+        None
+    )
+    if not item:
+        return '笔记不存在', 404
+    content = item.get('Content', '')
+    if content:
+        html_body = markdown.markdown(content, extensions=['extra'])
+    else:
+        filepath = os.path.join(app.config['NOTE_PATH'], filename + '.html')
+        if os.path.exists(filepath):
+            raw = open(filepath, encoding='utf-8').read()
+            m = re.search(r'<body[^>]*>(.*?)</body>', raw, re.DOTALL)
+            html_body = m.group(1).strip() if m else raw
+        else:
+            html_body = '<p style="color:var(--text-muted)">笔记文件不存在</p>'
+    return render_template('note_detail.html', item=item, html_body=html_body)
+
+
+@app.route('/note/update', methods=['POST'])
+def note_update():
+    if not login_cat():
+        return '{"code":0,"msgs":"未登录"}'
+    key_id  = request.form.get('KeyID', '').strip()
+    title   = request.form.get('title', '').strip()
+    content = request.form.get('content', '')
+    if not key_id or not title:
+        return '{"code":0,"msgs":"参数缺失"}'
+    escaped_title = html_module.escape(title)
+    records = storage.load('noteinfo')
+    record = next(
+        (r for r in records if r['KeyID'] == key_id and r.get('IsDelete', 0) == 0),
+        None
+    )
+    if not record:
+        return '{"code":0,"msgs":"笔记不存在"}'
+    path      = record['Path']
+    html_body = markdown.markdown(content, extensions=['extra'])
+    full_html = f"""<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>{escaped_title}</title>
+  <style>
+    body{{font-family:'Noto Sans SC',sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.8}}
+    img{{max-width:100%}}
+    pre{{background:#f5f5f5;padding:1rem;border-radius:4px;overflow-x:auto}}
+    code{{background:#f5f5f5;padding:.1rem .3rem;border-radius:3px;font-size:.9em}}
+    blockquote{{border-left:4px solid #ddd;margin:0;padding-left:1rem;color:#555}}
+  </style>
+</head>
+<body>
+  <h1>{escaped_title}</h1>
+  {html_body}
+</body>
+</html>"""
+    filepath = os.path.join(app.config['NOTE_PATH'], path + '.html')
+    os.makedirs(app.config['NOTE_PATH'], exist_ok=True)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(full_html)
+    now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    record['Name']       = title
+    record['Content']    = content
+    record['ModifyTime'] = now
+    storage.save('noteinfo', records)
+    return '{"code":1,"msgs":"保存成功"}'
 
 
 if __name__ == '__main__':

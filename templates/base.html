@@ -17,7 +17,7 @@
   <div class="nav-links" id="navLinks">
     <a class="nav-link {% if request.endpoint == 'photo' %}active{% endif %}"
        href="{{ url_for('photo') }}">Photo</a>
-    <a class="nav-link {% if request.endpoint in ('note', 'note_new') %}active{% endif %}"
+    <a class="nav-link {% if request.endpoint in ('note', 'note_new', 'cat_notes_file') %}active{% endif %}"
        href="{{ url_for('note') }}">Note</a>
   </div>
   <div class="nav-right">
