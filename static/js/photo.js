@@ -96,6 +96,11 @@
           deleteModal.hide();
           const card = document.querySelector(`.photo-card[data-keyid="${currentKeyID}"]`);
           if (card) card.remove();
+          // Sync PHOTO_DATA so timeline stays consistent if already built
+          const idx = PHOTO_DATA.findIndex(p => p.KeyID === currentKeyID);
+          if (idx !== -1) PHOTO_DATA.splice(idx, 1);
+          const tlEl = document.getElementById('photo-timeline');
+          if (tlEl) { delete tlEl.dataset.built; tlEl.innerHTML = ''; }
         } else {
           alert(data.msgs || '删除失败，请重试');
         }

@@ -79,6 +79,7 @@ def photo():
         p.ProductType       = item['ProductType']
         p.ProductTypeRemark = item.get('ProductTypeRemark', '图片区一') or '图片区一'
         p.Remark            = item.get('Remark', '')
+        p.AddTime           = item.get('AddTime', '')
         value_list.append(p)
     return render_template('photo.html', value=value_list)
 
