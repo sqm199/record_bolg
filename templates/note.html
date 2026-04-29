@@ -4,9 +4,17 @@
 {% block content %}
 <div class="page-header">
   <h1>笔记</h1>
-  <a href="{{ url_for('note_new') }}" class="btn-accent">＋ 新建笔记</a>
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <div class="view-toggle">
+      <button class="view-btn active" data-view="list" onclick="switchNoteView('list')">≡ 列表</button>
+      <button class="view-btn" data-view="timeline" onclick="switchNoteView('timeline')">○ 时间轴</button>
+    </div>
+    <a href="{{ url_for('note_new') }}" class="btn-accent">＋ 新建笔记</a>
+  </div>
 </div>
 
+<!-- 列表视图 -->
+<div id="note-list-view">
 {% if value %}
 <div class="note-list">
   {% for item in value %}
@@ -14,7 +22,7 @@
     <div class="note-title">{{ item.Name }}</div>
     <span class="note-meta">{{ item.AddPerson }} · {{ item.AddTime[:10] if item.AddTime else '' }}</span>
     <a href="{{ url_for('cat_notes_file', filename=item.Path) }}"
-       class="btn-ghost" style="font-size:0.82rem" target="_blank">查看</a>
+       class="btn-ghost" style="font-size:0.82rem">查看</a>
     <button class="note-delete" title="删除"
             onclick="confirmNoteDelete('{{ item.KeyID }}')">×</button>
   </div>
@@ -26,6 +34,10 @@
   <div>还没有笔记，点击右上角新建</div>
 </div>
 {% endif %}
+</div>
+
+<!-- 时间轴视图 -->
+<div id="note-timeline" class="timeline"></div>
 
 <!-- 删除确认 Modal -->
 <div class="modal fade" id="noteDeleteModal" tabindex="-1">
@@ -47,12 +59,14 @@
 
 {% block scripts %}
 <script>
+  // ── Delete ────────────────────────────────────────────────────────────────
   let noteDeleteModal = null;
   let deleteNoteKeyID = null;
 
   function confirmNoteDelete(keyid) {
     deleteNoteKeyID = keyid;
-    if (!noteDeleteModal) noteDeleteModal = new bootstrap.Modal(document.getElementById('noteDeleteModal'));
+    if (!noteDeleteModal)
+      noteDeleteModal = new bootstrap.Modal(document.getElementById('noteDeleteModal'));
     noteDeleteModal.show();
   }
 
@@ -66,10 +80,111 @@
     .then(data => {
       if (data.code === 1) {
         noteDeleteModal.hide();
-        const el = document.getElementById('note-' + deleteNoteKeyID);
-        if (el) el.remove();
+        // 同时从列表视图和时间轴视图移除
+        const listEl = document.getElementById('note-' + deleteNoteKeyID);
+        if (listEl) listEl.remove();
+        const tlEl = document.getElementById('tl-note-' + deleteNoteKeyID);
+        if (tlEl) tlEl.remove();
       }
     });
   });
+
+  // ── Timeline ──────────────────────────────────────────────────────────────
+  const NOTE_DATA = {{ value | tojson }};
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function buildNoteTimeline() {
+    const container = document.getElementById('note-timeline');
+    container.innerHTML = '';
+
+    const sorted = NOTE_DATA.slice().sort(function (a, b) {
+      return (b.AddTime || '').localeCompare(a.AddTime || '');
+    });
+
+    if (sorted.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state"><div class="empty-icon">📝</div><div>还没有笔记</div></div>';
+      return;
+    }
+
+    var currentYear = null;
+
+    sorted.forEach(function (item, index) {
+      var date  = item.AddTime ? item.AddTime.slice(0, 10) : '';
+      var year  = date.slice(0, 4);
+      var month = parseInt(date.slice(5, 7), 10);
+      var day   = parseInt(date.slice(8, 10), 10);
+      var isLast = index === sorted.length - 1;
+
+      if (year && year !== currentYear) {
+        currentYear = year;
+        var yearEl = document.createElement('div');
+        yearEl.className = 'timeline-year-label';
+        yearEl.innerHTML =
+          '<span class="tl-dot"></span><span class="tl-year">' + escHtml(year) + '</span>';
+        container.appendChild(yearEl);
+      }
+
+      var itemEl = document.createElement('div');
+      itemEl.className = 'timeline-item';
+      itemEl.id = 'tl-note-' + item.KeyID;
+      itemEl.innerHTML =
+        '<div class="timeline-spine">' +
+          '<div class="timeline-dot green"></div>' +
+          (isLast ? '' : '<div class="timeline-line green"></div>') +
+        '</div>' +
+        '<div class="timeline-body">' +
+          '<div class="timeline-date">' + month + '月 ' + day + '日</div>' +
+          '<div class="timeline-card">' +
+            '<div class="timeline-card-title">' + escHtml(item.Name) + '</div>' +
+            '<div class="timeline-card-meta">' +
+              '<span>' + escHtml(item.AddPerson || '') + '</span>' +
+              '<span>·</span>' +
+              '<span>' + escHtml(item.ProductTypeRemark || '') + '</span>' +
+              '<a href="/notes/' + encodeURIComponent(item.Path) + '" ' +
+                 'style="margin-left:auto;color:var(--accent);font-size:0.72rem;text-decoration:none">' +
+                 '查看 →</a>' +
+              '<button style="background:none;border:none;color:var(--text-muted);cursor:pointer;' +
+                       'font-size:1rem;padding:0;line-height:1" ' +
+                       'onclick="confirmNoteDelete(\'' + item.KeyID + '\')" title="删除">×</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      container.appendChild(itemEl);
+    });
+  }
+
+  function switchNoteView(view) {
+    var listEl     = document.getElementById('note-list-view');
+    var timelineEl = document.getElementById('note-timeline');
+    document.querySelectorAll('.view-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.view === view);
+    });
+    if (view === 'timeline') {
+      listEl.style.display = 'none';
+      timelineEl.classList.add('visible');
+      if (!timelineEl.dataset.built) {
+        buildNoteTimeline();
+        timelineEl.dataset.built = '1';
+      }
+    } else {
+      listEl.style.display = '';
+      timelineEl.classList.remove('visible');
+    }
+    localStorage.setItem('note_view', view);
+  }
+
+  // 恢复上次视图偏好
+  (function () {
+    var saved = localStorage.getItem('note_view');
+    if (saved === 'timeline') switchNoteView('timeline');
+  })();
 </script>
 {% endblock %}
