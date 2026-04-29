@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "🦌 羚羊之家" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - link "Photo" [ref=e5] [cursor=pointer]:
+        - /url: /photo
+      - link "Note" [ref=e6] [cursor=pointer]:
+        - /url: /note
+    - generic [ref=e7]:
+      - generic [ref=e8]: admin
+      - link "退出" [ref=e9] [cursor=pointer]:
+        - /url: /logout
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - link "← 返回笔记列表" [ref=e12] [cursor=pointer]:
+        - /url: /note
+      - button "✏️ 编辑" [ref=e14] [cursor=pointer]
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - heading "test-content-note" [level=1] [ref=e17]
+        - generic [ref=e18]:
+          - generic [ref=e19]: admin
+          - generic [ref=e20]: ·
+          - generic [ref=e21]: 2026-04-29
+          - generic [ref=e22]: ·
+          - generic [ref=e23]: 公开区
+      - generic [ref=e24]:
+        - heading "Hello" [level=2] [ref=e25]
+        - paragraph [ref=e26]:
+          - text: This is a
+          - strong [ref=e27]: test
+          - text: note with Content field.

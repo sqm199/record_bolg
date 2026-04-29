@@ -1,0 +1,152 @@
+<h2>时间轴视图：布局方式</h2>
+<p class="subtitle">照片和笔记都需要增加时间轴展示。请选择你希望的时间轴布局：</p>
+
+<div class="cards">
+
+  <!-- Option A: 左侧竖线 + 右侧卡片 -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0f1117;padding:1.2rem;border-radius:8px;min-height:220px;font-size:.78rem">
+
+        <!-- 年份标签 -->
+        <div style="color:#6c8ef5;font-weight:600;font-size:.8rem;margin-bottom:.8rem;margin-left:2.5rem">2026</div>
+
+        <!-- 条目 1 -->
+        <div style="display:flex;gap:.8rem;margin-bottom:.9rem;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;align-items:center;width:1.5rem;flex-shrink:0">
+            <div style="width:10px;height:10px;border-radius:50%;background:#6c8ef5;flex-shrink:0;margin-top:.25rem"></div>
+            <div style="width:2px;background:#2d3148;flex:1;margin-top:.3rem;min-height:40px"></div>
+          </div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.7rem .9rem;flex:1">
+            <div style="color:#8b92a5;font-size:.7rem;margin-bottom:.3rem">4月 29日</div>
+            <div style="color:#e8eaf0;font-weight:500">旅行照片 · 布达拉宫</div>
+            <div style="color:#8b92a5;font-size:.7rem;margin-top:.2rem">图片区一 · 3 张</div>
+          </div>
+        </div>
+
+        <!-- 条目 2 -->
+        <div style="display:flex;gap:.8rem;margin-bottom:.9rem;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;align-items:center;width:1.5rem;flex-shrink:0">
+            <div style="width:10px;height:10px;border-radius:50%;background:#4ade80;flex-shrink:0;margin-top:.25rem"></div>
+            <div style="width:2px;background:#2d3148;flex:1;margin-top:.3rem;min-height:40px"></div>
+          </div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.7rem .9rem;flex:1">
+            <div style="color:#8b92a5;font-size:.7rem;margin-bottom:.3rem">4月 21日</div>
+            <div style="color:#e8eaf0;font-weight:500">关于 Vue3 的笔记</div>
+            <div style="color:#8b92a5;font-size:.7rem;margin-top:.2rem">笔记 · admin</div>
+          </div>
+        </div>
+
+        <!-- 条目 3 -->
+        <div style="display:flex;gap:.8rem;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;align-items:center;width:1.5rem;flex-shrink:0">
+            <div style="width:10px;height:10px;border-radius:50%;background:#6c8ef5;flex-shrink:0;margin-top:.25rem"></div>
+          </div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.7rem .9rem;flex:1">
+            <div style="color:#8b92a5;font-size:.7rem;margin-bottom:.3rem">4月 15日</div>
+            <div style="color:#e8eaf0;font-weight:500">壁纸收藏</div>
+            <div style="color:#8b92a5;font-size:.7rem;margin-top:.2rem">照片 · 5 张</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 左线单列</h3>
+      <p>左侧一条竖线，时间节点圆点，右侧内容卡片。简洁，适合移动端，内容密度适中。</p>
+    </div>
+  </div>
+
+  <!-- Option B: 中线交替排列 -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0f1117;padding:1rem;border-radius:8px;min-height:220px;font-size:.78rem;position:relative">
+
+        <!-- 中间竖线 -->
+        <div style="position:absolute;left:50%;top:1rem;bottom:1rem;width:2px;background:#2d3148;transform:translateX(-50%)"></div>
+
+        <div style="color:#6c8ef5;font-weight:600;font-size:.75rem;text-align:center;margin-bottom:.8rem;position:relative">2026</div>
+
+        <!-- 条目 1: 右侧 -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:.7rem;position:relative">
+          <div style="width:10px;height:10px;border-radius:50%;background:#6c8ef5;position:absolute;left:50%;top:.5rem;transform:translateX(-50%);z-index:1"></div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.55rem .75rem;width:46%">
+            <div style="color:#8b92a5;font-size:.65rem">4月 29日</div>
+            <div style="color:#e8eaf0;font-size:.75rem;font-weight:500">旅行照片</div>
+          </div>
+        </div>
+
+        <!-- 条目 2: 左侧 -->
+        <div style="display:flex;justify-content:flex-start;margin-bottom:.7rem;position:relative">
+          <div style="width:10px;height:10px;border-radius:50%;background:#4ade80;position:absolute;left:50%;top:.5rem;transform:translateX(-50%);z-index:1"></div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.55rem .75rem;width:46%">
+            <div style="color:#8b92a5;font-size:.65rem">4月 21日</div>
+            <div style="color:#e8eaf0;font-size:.75rem;font-weight:500">Vue3 笔记</div>
+          </div>
+        </div>
+
+        <!-- 条目 3: 右侧 -->
+        <div style="display:flex;justify-content:flex-end;position:relative">
+          <div style="width:10px;height:10px;border-radius:50%;background:#6c8ef5;position:absolute;left:50%;top:.5rem;transform:translateX(-50%);z-index:1"></div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.55rem .75rem;width:46%">
+            <div style="color:#8b92a5;font-size:.65rem">4月 15日</div>
+            <div style="color:#e8eaf0;font-size:.75rem;font-weight:500">壁纸收藏</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · 中线交替</h3>
+      <p>中间一条竖线，内容左右交替。视觉有律动感，但在移动端需要折叠为单列。</p>
+    </div>
+  </div>
+
+  <!-- Option C: 月份分组 + 横向条目 -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0f1117;padding:1rem;border-radius:8px;min-height:220px;font-size:.78rem">
+
+        <!-- 月份组: 4月 -->
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.65rem">
+          <div style="width:32px;height:32px;border-radius:8px;background:#1a1d27;border:1px solid #6c8ef5;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+            <div style="color:#6c8ef5;font-size:.55rem;line-height:1">APR</div>
+            <div style="color:#e8eaf0;font-weight:700;font-size:.8rem;line-height:1.2">29</div>
+          </div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.5rem .75rem;flex:1">
+            <div style="color:#e8eaf0;font-weight:500">旅行照片 · 布达拉宫</div>
+            <div style="color:#8b92a5;font-size:.67rem;margin-top:.15rem">照片 · 图片区一</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.65rem">
+          <div style="width:32px;height:32px;border-radius:8px;background:#1a1d27;border:1px solid #2d3148;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+            <div style="color:#8b92a5;font-size:.55rem;line-height:1">APR</div>
+            <div style="color:#e8eaf0;font-weight:700;font-size:.8rem;line-height:1.2">21</div>
+          </div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.5rem .75rem;flex:1">
+            <div style="color:#e8eaf0;font-weight:500">关于 Vue3 的笔记</div>
+            <div style="color:#8b92a5;font-size:.67rem;margin-top:.15rem">笔记 · admin</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="width:32px;height:32px;border-radius:8px;background:#1a1d27;border:1px solid #2d3148;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+            <div style="color:#8b92a5;font-size:.55rem;line-height:1">APR</div>
+            <div style="color:#e8eaf0;font-weight:700;font-size:.8rem;line-height:1.2">15</div>
+          </div>
+          <div style="background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:.5rem .75rem;flex:1">
+            <div style="color:#e8eaf0;font-weight:500">壁纸收藏</div>
+            <div style="color:#8b92a5;font-size:.67rem;margin-top:.15rem">照片 · 5 张</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · 日期卡片列</h3>
+      <p>左侧显示日期方块，右侧内容行。无需竖线，紧凑清晰，适合长列表，移动端友好。</p>
+    </div>
+  </div>
+
+</div>

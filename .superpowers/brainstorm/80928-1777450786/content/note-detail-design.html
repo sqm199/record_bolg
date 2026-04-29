@@ -1,0 +1,138 @@
+<h2>设计方案 · 笔记详情页</h2>
+<p class="subtitle">左：读模式 &nbsp;|&nbsp; 右：点击"编辑"后切换为内联编辑模式</p>
+
+<div class="split">
+
+  <!-- 读模式 -->
+  <div class="mockup">
+    <div class="mockup-header">📖 读模式（默认）</div>
+    <div class="mockup-body" style="background:#0f1117;padding:0;border-radius:0 0 8px 8px;overflow:hidden">
+
+      <!-- 模拟导航栏 -->
+      <div style="background:#13151f;border-bottom:1px solid #2d3148;padding:.5rem 1rem;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#e8eaf0;font-size:.8rem;font-weight:600">🦌 羚羊之家</span>
+        <div style="display:flex;gap:1rem">
+          <span style="color:#8b92a5;font-size:.75rem">Photo</span>
+          <span style="color:#6c8ef5;font-size:.75rem;border-bottom:2px solid #6c8ef5;padding-bottom:2px">Note</span>
+        </div>
+        <span style="color:#8b92a5;font-size:.75rem">admin · 退出</span>
+      </div>
+
+      <!-- 页面内容 -->
+      <div style="padding:1.25rem 1.25rem 1.5rem;max-width:680px;margin:0 auto">
+
+        <!-- 顶部操作栏 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+          <a style="color:#8b92a5;font-size:.78rem;text-decoration:none;display:flex;align-items:center;gap:.3rem">
+            <span style="font-size:.9rem">←</span> 返回笔记列表
+          </a>
+          <button style="background:#1a1d27;border:1px solid #2d3148;color:#6c8ef5;padding:.3rem .85rem;border-radius:6px;font-size:.78rem;cursor:pointer;display:flex;align-items:center;gap:.3rem">
+            ✏️ 编辑
+          </button>
+        </div>
+
+        <!-- 标题区 -->
+        <div style="margin-bottom:1.2rem;padding-bottom:1rem;border-bottom:1px solid #2d3148">
+          <h1 style="color:#e8eaf0;font-size:1.35rem;font-weight:700;margin:0 0 .4rem;line-height:1.4">关于 Vue3 组合式 API 的思考</h1>
+          <div style="color:#8b92a5;font-size:.78rem;display:flex;align-items:center;gap:.75rem">
+            <span>admin</span>
+            <span style="color:#2d3148">·</span>
+            <span>2026-04-21</span>
+            <span style="color:#2d3148">·</span>
+            <span style="background:#1a1d27;border:1px solid #2d3148;padding:.1rem .45rem;border-radius:10px;font-size:.7rem">公开区</span>
+          </div>
+        </div>
+
+        <!-- 正文 -->
+        <div style="color:#c8cad5;line-height:1.9;font-size:.88rem">
+          <p style="margin:0 0 .9rem">Vue3 引入的组合式 API（Composition API）解决了 Options API 在大型组件中逻辑分散的问题……</p>
+          <h2 style="color:#e8eaf0;font-size:1rem;font-weight:600;margin:.9rem 0 .5rem">核心优势</h2>
+          <ul style="margin:0 0 .9rem;padding-left:1.2rem">
+            <li style="margin-bottom:.3rem">逻辑复用通过自定义 <code style="background:#1a1d27;padding:.1rem .3rem;border-radius:3px;color:#6c8ef5;font-size:.82rem">composable</code> 函数实现</li>
+            <li style="margin-bottom:.3rem">相关逻辑聚合，不再分散在各 option</li>
+          </ul>
+          <blockquote style="border-left:3px solid #6c8ef5;margin:.9rem 0;padding:.5rem .9rem;background:#1a1d27;border-radius:0 6px 6px 0">
+            <p style="margin:0;color:#8b92a5;font-style:italic;font-size:.85rem">setup() 是入口，ref/reactive 是状态，watch/computed 是派生逻辑。</p>
+          </blockquote>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑模式 -->
+  <div class="mockup">
+    <div class="mockup-header">✏️ 编辑模式（点击编辑后）</div>
+    <div class="mockup-body" style="background:#0f1117;padding:0;border-radius:0 0 8px 8px;overflow:hidden">
+
+      <!-- 模拟导航栏 -->
+      <div style="background:#13151f;border-bottom:1px solid #2d3148;padding:.5rem 1rem;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#e8eaf0;font-size:.8rem;font-weight:600">🦌 羚羊之家</span>
+        <div style="display:flex;gap:1rem">
+          <span style="color:#8b92a5;font-size:.75rem">Photo</span>
+          <span style="color:#6c8ef5;font-size:.75rem;border-bottom:2px solid #6c8ef5;padding-bottom:2px">Note</span>
+        </div>
+        <span style="color:#8b92a5;font-size:.75rem">admin · 退出</span>
+      </div>
+
+      <!-- 页面内容 -->
+      <div style="padding:1.25rem 1.25rem 1.5rem;max-width:680px;margin:0 auto">
+
+        <!-- 顶部操作栏（编辑状态） -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+          <a style="color:#8b92a5;font-size:.78rem;text-decoration:none;display:flex;align-items:center;gap:.3rem">
+            <span style="font-size:.9rem">←</span> 返回笔记列表
+          </a>
+          <div style="display:flex;gap:.5rem">
+            <button style="background:transparent;border:1px solid #2d3148;color:#8b92a5;padding:.3rem .75rem;border-radius:6px;font-size:.78rem;cursor:pointer">取消</button>
+            <button style="background:#6c8ef5;border:none;color:#fff;padding:.3rem .85rem;border-radius:6px;font-size:.78rem;cursor:pointer;font-weight:500">保存</button>
+          </div>
+        </div>
+
+        <!-- 标题输入框 -->
+        <div style="margin-bottom:.9rem">
+          <input style="background:#12141e;border:1px solid #6c8ef5;color:#e8eaf0;border-radius:6px;padding:.55rem .85rem;width:100%;font-size:1rem;font-weight:600;box-sizing:border-box" value="关于 Vue3 组合式 API 的思考">
+        </div>
+
+        <!-- EasyMDE 模拟 -->
+        <div style="border:1px solid #2d3148;border-radius:6px;overflow:hidden">
+          <!-- 工具栏 -->
+          <div style="background:#1a1d27;padding:.4rem .6rem;display:flex;gap:.5rem;border-bottom:1px solid #2d3148;flex-wrap:wrap">
+            <span style="color:#8b92a5;font-size:.75rem;padding:.2rem .4rem;border-radius:3px;cursor:pointer">B</span>
+            <span style="color:#8b92a5;font-size:.75rem;padding:.2rem .4rem;border-radius:3px;cursor:pointer;font-style:italic">I</span>
+            <span style="color:#2d3148;font-size:.75rem">|</span>
+            <span style="color:#8b92a5;font-size:.72rem;padding:.2rem .4rem;cursor:pointer">H1</span>
+            <span style="color:#8b92a5;font-size:.72rem;padding:.2rem .4rem;cursor:pointer">H2</span>
+            <span style="color:#2d3148;font-size:.75rem">|</span>
+            <span style="color:#8b92a5;font-size:.72rem;padding:.2rem .4rem;cursor:pointer">链接</span>
+            <span style="color:#8b92a5;font-size:.72rem;padding:.2rem .4rem;cursor:pointer">预览</span>
+          </div>
+          <!-- 编辑区 -->
+          <div style="background:#12141e;padding:.8rem;min-height:130px">
+            <div style="color:#c8cad5;font-size:.82rem;line-height:1.8;font-family:monospace">
+              <span style="color:#8b92a5">## </span><span>核心优势</span><br>
+              <span style="color:#8b92a5">- </span><span>逻辑复用通过自定义 <span style="color:#6c8ef5">`composable`</span> 函数实现</span><br>
+              <span style="color:#8b92a5">- </span><span>相关逻辑聚合，不再分散</span><br><br>
+              <span style="background:rgba(108,142,245,.25);color:#e8eaf0">│</span> <span style="color:#8b92a5;font-style:italic">setup() 是入口…</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 状态提示 -->
+        <div style="margin-top:.6rem;font-size:.75rem;color:#8b92a5;min-height:1rem"></div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;background:rgba(108,142,245,.08);border:1px solid rgba(108,142,245,.2);border-radius:8px;padding:1rem 1.25rem">
+  <div style="color:#6c8ef5;font-size:.8rem;font-weight:600;margin-bottom:.5rem">架构说明</div>
+  <ul style="color:#c8cad5;font-size:.8rem;line-height:1.8;margin:0;padding-left:1.2rem">
+    <li>路由 <code style="background:#1a1d27;padding:.05rem .3rem;border-radius:3px;color:#6c8ef5">/notes/&lt;filename&gt;</code> → 改为 Flask 渲染，继承 base.html</li>
+    <li>新增 <code style="background:#1a1d27;padding:.05rem .3rem;border-radius:3px;color:#6c8ef5">/note/update</code> POST，保存修改内容（更新 JSON + 重新生成 .html 文件）</li>
+    <li>Markdown 原文存入 noteinfo.json 的 <code style="background:#1a1d27;padding:.05rem .3rem;border-radius:3px;color:#6c8ef5">Content</code> 字段</li>
+    <li>读/编辑模式通过 JS 切换显示，EasyMDE 按需初始化</li>
+  </ul>
+</div>

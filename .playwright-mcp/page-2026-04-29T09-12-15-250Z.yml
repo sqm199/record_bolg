@@ -1,0 +1,24 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "🦌 羚羊之家" [ref=e3] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e4]:
+      - link "Photo" [ref=e5] [cursor=pointer]:
+        - /url: /photo
+      - link "Note" [ref=e6] [cursor=pointer]:
+        - /url: /note
+    - generic [ref=e7]:
+      - generic [ref=e8]: admin
+      - link "退出" [ref=e9] [cursor=pointer]:
+        - /url: /logout
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - heading "笔记" [level=1] [ref=e12]
+      - link "＋ 新建笔记" [ref=e13] [cursor=pointer]:
+        - /url: /note/new
+    - generic [ref=e15]:
+      - generic [ref=e16]: css
+      - generic [ref=e17]: admin · 2026-04-21
+      - link "查看" [ref=e18] [cursor=pointer]:
+        - /url: /notes/css
+      - button "×" [ref=e19] [cursor=pointer]
