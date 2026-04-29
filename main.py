@@ -167,8 +167,9 @@ def note():
         n.Name      = item['Name']
         n.ProductType = item.get('ProductType', 1)
         n.AddPerson = item.get('AddPerson', '')
-        n.AddTime   = item.get('AddTime', '')
-        n.Path      = item.get('Path', item['Name'])
+        n.AddTime            = item.get('AddTime', '')
+        n.Path               = item.get('Path', item['Name'])
+        n.ProductTypeRemark  = item.get('ProductTypeRemark', '')
         value_list.append(n)
     return render_template('note.html', value=value_list)
 
