@@ -9,9 +9,7 @@
 <div class="page-header">
   <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem">← 返回笔记列表</a>
   <div id="header-btns">
-    {% if item.get('Content') %}
     <button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)">✏️ 编辑</button>
-    {% endif %}
   </div>
 </div>
 
@@ -43,7 +41,7 @@
   </div>
   <div style="margin-bottom:0.5rem">
     <label style="color:var(--text-muted);font-size:0.8rem;display:block;margin-bottom:.3rem">内容</label>
-    <textarea id="edit-content">{{ item.get('Content', '') }}</textarea>
+    <textarea id="edit-content">{% if item.get('Content') %}{{ item.get('Content') }}{% else %}{{ html_body }}{% endif %}</textarea>
   </div>
   <div id="edit-msg" style="font-size:0.8rem;min-height:1.1rem;color:var(--danger)"></div>
 </div>

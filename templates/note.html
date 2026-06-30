@@ -19,7 +19,7 @@
 <div class="note-list">
   {% for item in value %}
   <div class="note-card" id="note-{{ item.KeyID }}">
-    <div class="note-title">{{ item.Name }}</div>
+    <div class="note-title">{% if item.IsEncrypted %}🔒 {% endif %}{{ item.Name }}</div>
     <span class="note-meta">{{ item.AddPerson }} · {{ item.AddTime[:10] if item.AddTime else '' }}</span>
     <a href="{{ url_for('cat_notes_file', filename=item.Path) }}"
        class="btn-ghost" style="font-size:0.82rem">查看</a>
@@ -146,7 +146,7 @@
         '<div class="timeline-body">' +
           '<div class="timeline-date">' + month + '月 ' + day + '日</div>' +
           '<div class="timeline-card">' +
-            '<div class="timeline-card-title">' + escHtml(item.Name) + '</div>' +
+            '<div class="timeline-card-title">' + (item.IsEncrypted ? '🔒 ' : '') + escHtml(item.Name) + '</div>' +
             '<div class="timeline-card-meta">' +
               '<span>' + escHtml(item.AddPerson || '') + '</span>' +
               '<span>·</span>' +

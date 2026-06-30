@@ -21,6 +21,15 @@
     <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">内容</label>
     <textarea id="noteContent"></textarea>
   </div>
+  <div style="margin-bottom:1.25rem">
+    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;color:var(--text-muted);font-size:0.85rem">
+      <input type="checkbox" id="noteEncrypt" onchange="toggleEncrypt()">
+      🔒 加密笔记（访问需输入密码）
+    </label>
+    <div id="passwordWrap" style="display:none;margin-top:.6rem">
+      <input type="password" id="notePassword" class="form-control-dark" placeholder="设置访问密码" autocomplete="new-password">
+    </div>
+  </div>
   <div style="display:flex;align-items:center;gap:1rem">
     <button class="btn-accent" id="saveBtn" onclick="saveNote()">保存笔记</button>
     <div id="saveMsg" style="font-size:0.82rem;min-height:1rem"></div>
@@ -44,14 +53,26 @@
     ]
   });
 
+  function toggleEncrypt() {
+    const wrap = document.getElementById('passwordWrap');
+    wrap.style.display = document.getElementById('noteEncrypt').checked ? 'block' : 'none';
+  }
+
   function saveNote() {
     const title      = document.getElementById('noteTitle').value.trim();
     const titleError = document.getElementById('titleError');
     const saveMsg    = document.getElementById('saveMsg');
     const saveBtn    = document.getElementById('saveBtn');
+    const encrypted  = document.getElementById('noteEncrypt').checked;
+    const password   = document.getElementById('notePassword').value;
 
     if (!title) {
       titleError.textContent = '请输入标题';
+      return;
+    }
+    if (encrypted && !password) {
+      saveMsg.style.color = 'var(--danger)';
+      saveMsg.textContent = '加密笔记必须设置密码';
       return;
     }
     titleError.textContent = '';
@@ -62,7 +83,12 @@
     fetch('/note/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ title: title, content: easyMDE.value() })
+      body: new URLSearchParams({
+        title:        title,
+        content:      easyMDE.value(),
+        is_encrypted: encrypted ? '1' : '0',
+        password:     password
+      })
     })
     .then(r => r.json())
     .then(data => {

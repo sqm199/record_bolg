@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}军事塔防 — 羚羊之家{% endblock %}
+
+{% block content %}
+<div class="td-root">
+  <div class="page-header td-header">
+    <h1>🪖 军事塔防</h1>
+    <div class="td-controls">
+      <button id="tdStart" class="btn-accent">开始进攻</button>
+      <button id="tdPause" class="btn-ghost" style="display:none">暂停</button>
+      <a href="{{ url_for('game') }}" class="btn-ghost">返回</a>
+    </div>
+  </div>
+
+  <div class="td-hud">
+    <div class="td-stat">💰 金币 <b id="tdGold">0</b></div>
+    <div class="td-stat">🌊 波次 <b id="tdWave">0 / 10</b></div>
+    <div class="td-stat">⏱ <b id="tdPhase">准备中</b></div>
+    <div class="td-stat td-base-stat">🏰 基地
+      <span class="td-basebar-wrap"><span id="tdBaseBar" class="td-basebar"></span></span>
+      <b id="tdBaseText">—</b>
+    </div>
+  </div>
+
+  <div class="td-stage" id="tdStage">
+    <canvas id="tdCanvas"></canvas>
+    <div class="td-overlay" id="tdOverlay">
+      <div class="td-overlay-card">
+        <div id="tdOverlayText" class="td-overlay-text"></div>
+        <button id="tdRestart" class="btn-accent">再来一局</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="td-camps" id="tdCamps"></div>
+
+  <p class="td-tip">先建造营地（💰100）→ 升级解锁更强兵种 → 点造单位出击 → 点「开始进攻」迎接 10 波敌军。守住基地即胜利。</p>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+  .td-root { max-width: 980px; margin: 0 auto; }
+  .td-header { display: flex; align-items: center; justify-content: space-between; }
+  .td-controls { display: flex; gap: .5rem; align-items: center; }
+
+  .td-hud {
+    display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: .8rem;
+  }
+  .td-stat {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: .45rem .8rem; font-size: .85rem;
+    color: var(--text-muted); display: flex; align-items: center; gap: .4rem;
+  }
+  .td-stat b { color: var(--text-primary); font-weight: 600; }
+  .td-base-stat { flex: 1; min-width: 200px; }
+  .td-basebar-wrap {
+    display: inline-block; width: 110px; height: 8px; background: var(--bg-input);
+    border-radius: 4px; overflow: hidden; vertical-align: middle;
+  }
+  .td-basebar { display: block; height: 100%; width: 100%; background: var(--success); transition: width .15s; }
+
+  .td-stage { position: relative; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+  #tdCanvas { display: block; width: 100%; background: #0f1117; }
+
+  .td-overlay {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(15, 17, 23, 0.78); backdrop-filter: blur(2px);
+  }
+  .td-overlay-card { text-align: center; }
+  .td-overlay-text { font-size: 1.4rem; color: var(--text-primary); margin-bottom: 1rem; font-weight: 600; }
+
+  .td-camps {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; margin-top: .8rem;
+  }
+  .td-camp {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: .7rem; min-height: 90px;
+  }
+  .td-camp-title {
+    font-size: .9rem; font-weight: 600; color: var(--text-primary);
+    margin-bottom: .55rem; display: flex; align-items: center; gap: .35rem;
+  }
+  .td-lv { color: var(--accent); font-size: .8rem; }
+  .td-up {
+    margin-left: auto; font-size: .72rem; padding: .15rem .5rem;
+  }
+  .td-build-row { display: flex; flex-direction: column; gap: .4rem; }
+  .td-btn {
+    font-size: .8rem; padding: .4rem .5rem; display: flex; align-items: center;
+    justify-content: space-between; gap: .3rem;
+  }
+  .td-cost { color: var(--text-muted); font-size: .75rem; }
+  .td-cost::before { content: '💰'; }
+
+  .td-units { display: flex; flex-direction: column; gap: .35rem; }
+  .td-unit-btn {
+    position: relative; overflow: hidden; display: flex; align-items: center; gap: .4rem;
+    width: 100%; padding: .4rem .55rem; font-size: .78rem; cursor: pointer;
+    background: var(--bg-input); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 7px; transition: border-color .12s, background .12s;
+  }
+  .td-unit-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--bg-hover); }
+  .td-unit-btn:disabled { opacity: .42; cursor: not-allowed; }
+  .td-u-icon { font-size: 1rem; }
+  .td-u-name { flex: 1; text-align: left; }
+  .td-u-cost { color: #ffd479; }
+  .td-u-count { color: var(--text-muted); min-width: 38px; text-align: right; }
+  .td-prog { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: rgba(255,255,255,0.06); }
+  .td-prog-fill { display: block; height: 100%; width: 0; background: var(--accent); }
+
+  .td-tip { color: var(--text-muted); font-size: .8rem; margin-top: .9rem; line-height: 1.6; }
+
+  @media (max-width: 640px) {
+    .td-camps { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/td/config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/td/coords.js') }}"></script>
+<script src="{{ url_for('static', filename='js/td/entities.js') }}"></script>
+<script src="{{ url_for('static', filename='js/td/particles.js') }}"></script>
+<script src="{{ url_for('static', filename='js/td/engine.js') }}"></script>
+<script src="{{ url_for('static', filename='js/td/render.js') }}"></script>
+<script src="{{ url_for('static', filename='js/td/ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/td/main.js') }}"></script>
+{% endblock %}

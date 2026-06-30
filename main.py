@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from Module import MPhotoInfo, MnoteInfo
 from Sqls import storage
 import markdown
@@ -20,7 +21,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['NOTE_PATH']     = NOTE_PATH
 
 ADMIN_ACCOUNT = "admin"
-ADMIN_PASSWORD = "admin@123"
+ADMIN_PASSWORD = "admin@717613"
 
 
 def mark_keyid():
@@ -171,8 +172,11 @@ def note():
         n.AddTime            = item.get('AddTime', '')
         n.Path               = item.get('Path', item['Name'])
         n.ProductTypeRemark  = item.get('ProductTypeRemark', '')
+        n.IsEncrypted        = item.get('IsEncrypted', 0)
         value_list.append(n)
-    return render_template('note.html', value=value_list, note_data=records)
+    # 剔除 PasswordHash 后再输出到前端，避免哈希泄露
+    note_data = [{k: v for k, v in r.items() if k != 'PasswordHash'} for r in records]
+    return render_template('note.html', value=value_list, note_data=note_data)
 
 
 @app.route('/note/new')
@@ -188,11 +192,15 @@ def note_save():
         return '{"code":0,"msgs":"未登录"}'
     title   = request.form.get('title', '').strip()
     content = request.form.get('content', '')
+    is_encrypted = request.form.get('is_encrypted') == '1'
+    password     = request.form.get('password', '')
     if not title:
         return '{"code":0,"msgs":"标题不能为空"}'
-    safe_title = secure_filename(title)
-    if not safe_title:
-        return '{"code":0,"msgs":"标题包含非法字符"}'
+    if is_encrypted and not password:
+        return '{"code":0,"msgs":"加密笔记必须设置密码"}'
+    # 中文等非 ASCII 标题经 secure_filename 后会变为空串，此时用 KeyID 作为文件名兜底
+    key_id = mark_keyid()
+    safe_title = secure_filename(title) or key_id
     escaped_title = html_module.escape(title)
 
     filepath = os.path.join(app.config['NOTE_PATH'], f'{safe_title}.html')
@@ -226,13 +234,15 @@ def note_save():
 
     now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     record = {
-        "KeyID":             mark_keyid(),
+        "KeyID":             key_id,
         "Name":              title,
         "ProductType":       1,
         "ProductTypeRemark": "公开区",
         "Path":              safe_title,
         "Content":           content,
         "Remark":            "",
+        "IsEncrypted":       1 if is_encrypted else 0,
+        "PasswordHash":      generate_password_hash(password) if is_encrypted else "",
         "IsDelete":          0,
         "AddTime":           now,
         "AddPerson":         session.get("username", "admin"),
@@ -270,6 +280,9 @@ def cat_notes_file(filename):
     )
     if not item:
         return '笔记不存在', 404
+    # 加密笔记：未在本次 session 内解锁则显示锁屏页
+    if item.get('IsEncrypted') and item['KeyID'] not in session.get('unlocked_notes', []):
+        return render_template('note_locked.html', item=item)
     content = item.get('Content', '')
     if content:
         html_body = markdown.markdown(content, extensions=['extra'])
@@ -284,6 +297,30 @@ def cat_notes_file(filename):
         else:
             html_body = '<p style="color:var(--text-muted)">笔记文件不存在</p>'
     return render_template('note_detail.html', item=item, html_body=html_body)
+
+
+@app.route('/note/unlock', methods=['POST'])
+def note_unlock():
+    if not login_cat():
+        return '{"code":0,"msgs":"未登录"}'
+    key_id   = request.form.get('KeyID', '').strip()
+    password = request.form.get('password', '')
+    if not key_id:
+        return '{"code":0,"msgs":"缺少KeyID"}'
+    records = storage.load('noteinfo')
+    record = next(
+        (r for r in records if r['KeyID'] == key_id and r.get('IsDelete', 0) == 0),
+        None
+    )
+    if not record or not record.get('IsEncrypted'):
+        return '{"code":0,"msgs":"笔记不存在"}'
+    if not check_password_hash(record.get('PasswordHash', ''), password):
+        return '{"code":0,"msgs":"密码错误"}'
+    unlocked = session.get('unlocked_notes', [])
+    if key_id not in unlocked:
+        unlocked = unlocked + [key_id]
+        session['unlocked_notes'] = unlocked
+    return '{"code":1,"msgs":"解锁成功"}'
 
 
 @app.route('/note/update', methods=['POST'])
@@ -336,6 +373,33 @@ def note_update():
     record['ModifyTime'] = now
     storage.save('noteinfo', records)
     return '{"code":1,"msgs":"保存成功"}'
+
+
+# ── Game ───────────────────────────────────────────────────────────────────
+
+GAMES = [
+    {
+        "KeyID":   "game-td",
+        "Name":    "军事塔防",
+        "Icon":    "🪖",
+        "Remark":  "建造营地、训练部队，驻守高墙缺口，抵御十波来袭的敌军。",
+        "Url":     "/game/td",
+    },
+]
+
+
+@app.route('/game')
+def game():
+    if not login_cat():
+        return redirect(url_for('login'))
+    return render_template('game.html', value=GAMES)
+
+
+@app.route('/game/td')
+def game_td():
+    if not login_cat():
+        return redirect(url_for('login'))
+    return render_template('game_td.html')
 
 
 if __name__ == '__main__':

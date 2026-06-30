@@ -2,6 +2,7 @@ import time
 
 class Note(object):
     def __init__(self, KeyID="", Name="", ProductType="", ProductTypeRemark="", Path="", Remark="", IsDelete=0,
+                 IsEncrypted=0,
                  AddTime=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())),
                  AddPerson="sys",
                  ModifyTime=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))):
@@ -12,6 +13,7 @@ class Note(object):
         self.Path = Path
         self.Remark = Remark
         self.IsDelete = IsDelete
+        self.IsEncrypted = IsEncrypted
         self.AddTime = AddTime
         self.AddPerson = AddPerson
         self.ModifyTime = ModifyTime

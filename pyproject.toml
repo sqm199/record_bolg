@@ -5,5 +5,28 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    # Web 主应用
+    "flask>=3.1.0",
+    "werkzeug>=3.0.0",
+    "jinja2>=3.1.0",
+    "itsdangerous>=2.2.0",
+    "markupsafe>=3.0.0",
+    "click>=8.1.0",
+    "blinker>=1.9.0",
     "markdown>=3.10.2",
+    # 生产 WSGI 服务器（Windows 部署 wsgi.py 用）
+    "waitress>=3.0.0",
+]
+
+[project.optional-dependencies]
+# service/ 目录下的独立脚本依赖；主应用不需要
+# 用法：uv sync --extra service
+service = [
+    "requests>=2.32.0",
+    "pymongo>=4.10.0",
+    "redis>=5.0.0",
+]
+# Sqls/pymysql.py 遗留依赖；main.py 已不使用，确认无用可整段删除
+legacy = [
+    "pymysql>=1.1.0",
 ]

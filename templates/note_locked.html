@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}🔒 {{ item.Name }} — 羚羊之家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem">← 返回笔记列表</a>
+</div>
+
+<div class="card-dark" style="max-width:420px;margin:3rem auto;padding:2rem;text-align:center">
+  <div style="font-size:2.4rem;line-height:1;margin-bottom:1rem">🔒</div>
+  <h2 style="font-size:1.15rem;font-weight:600;color:var(--text-primary);margin:0 0 .35rem">{{ item.Name }}</h2>
+  <p style="color:var(--text-muted);font-size:0.82rem;margin:0 0 1.5rem">这是一篇加密笔记，请输入密码访问</p>
+  <input type="password" id="unlockPassword" class="form-control-dark"
+         placeholder="请输入访问密码" autocomplete="off"
+         style="text-align:center" onkeydown="if(event.key==='Enter')unlockNote()">
+  <div id="unlockMsg" style="color:var(--danger);font-size:0.8rem;min-height:1.1rem;margin:.6rem 0"></div>
+  <button class="btn-accent" id="unlockBtn" onclick="unlockNote()" style="width:100%">解锁</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const NOTE_KEYID = {{ item.KeyID | tojson }};
+
+  function unlockNote() {
+    const pwd   = document.getElementById('unlockPassword').value;
+    const msgEl = document.getElementById('unlockMsg');
+    const btn   = document.getElementById('unlockBtn');
+    if (!pwd) {
+      msgEl.textContent = '请输入密码';
+      return;
+    }
+    msgEl.textContent = '';
+    btn.disabled      = true;
+    btn.textContent   = '解锁中…';
+
+    fetch('/note/unlock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ KeyID: NOTE_KEYID, password: pwd })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.code === 1) {
+        window.location.reload();
+      } else {
+        msgEl.textContent = data.msgs || '密码错误';
+        btn.disabled      = false;
+        btn.textContent   = '解锁';
+      }
+    })
+    .catch(() => {
+      msgEl.textContent = '网络错误，请重试';
+      btn.disabled      = false;
+      btn.textContent   = '解锁';
+    });
+  }
+
+  document.getElementById('unlockPassword').focus();
+</script>
+{% endblock %}

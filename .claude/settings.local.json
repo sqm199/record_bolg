@@ -12,7 +12,8 @@
       "Bash(C:/Users/1/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh *)",
       "Bash(git *)",
       "mcp__plugin_playwright_playwright__browser_tabs",
-      "mcp__plugin_playwright_playwright__browser_type"
+      "mcp__plugin_playwright_playwright__browser_type",
+      "Bash(uv pip *)"
     ]
   }
 }
