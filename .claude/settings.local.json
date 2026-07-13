@@ -13,7 +13,29 @@
       "Bash(git *)",
       "mcp__plugin_playwright_playwright__browser_tabs",
       "mcp__plugin_playwright_playwright__browser_type",
-      "Bash(uv pip *)"
+      "Bash(uv pip *)",
+      "Bash(curl -s -m 12 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\)\" -H \"Referer: https://movie.douban.com/\" \"https://movie.douban.com/j/new_search_subjects?sort=S&range=0,10&tags=%E7%94%B5%E5%BD%B1&start=0&year_range=2026,2026\")",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(curl -s -m 12 -A \"Mozilla/5.0\" -H \"Referer: https://movie.douban.com/\" \"https://movie.douban.com/j/new_search_subjects?sort=S&range=0,10&tags=%E7%94%B5%E8%A7%86%E5%89%A7&start=0&year_range=2026,2026\")",
+      "Bash(curl -s -m 12 -A \"Mozilla/5.0\" \"https://movie.douban.com/j/subject_suggest?q=%E9%98%BF%E5%87%A1%E8%BE%BE\")",
+      "Bash(grep -viE \"\\\\.venv|node_modules|/\\\\.git/\")",
+      "Bash(.venv/Scripts/python.exe *)",
+      "Bash(curl -s -c /tmp/cj.txt -X POST http://localhost:1111/login_confirm --data 'useraccount=admin&password=admin@717613')",
+      "Bash(curl -s -b /tmp/cj.txt http://localhost:1111/movie)",
+      "Bash(curl -s -b /tmp/cj.txt \"http://localhost:1111/movie/top?kind=movie\")",
+      "Bash(curl -s -b /tmp/cj.txt \"http://localhost:1111/movie/top?kind=tv\")",
+      "Bash(curl -s -b /tmp/cj.txt \"http://localhost:1111/movie/search?q=%E9%98%BF%E5%87%A1%E8%BE%BE\")",
+      "Bash(curl -s -b /tmp/cj.txt -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:1111/movie)",
+      "Bash(curl -s -b /tmp/cj.txt -o /dev/null -w \"/ -> %{http_code}\\\\n\" http://localhost:1111/)",
+      "Bash(pkill -f \"main.py\")",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_find",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_close"
     ]
   }
 }

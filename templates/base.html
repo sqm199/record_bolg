@@ -19,8 +19,8 @@
        href="{{ url_for('photo') }}">Photo</a>
     <a class="nav-link {% if request.endpoint in ('note', 'note_new', 'cat_notes_file') %}active{% endif %}"
        href="{{ url_for('note') }}">Note</a>
-    <a class="nav-link {% if request.endpoint == 'game' %}active{% endif %}"
-       href="{{ url_for('game') }}">Game</a>
+    <a class="nav-link {% if request.endpoint == 'movie' %}active{% endif %}"
+       href="{{ url_for('movie') }}">Movie</a>
   </div>
   <div class="nav-right">
     <span class="nav-username d-none d-sm-inline">{{ session.get('username', '') }}</span>

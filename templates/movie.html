@@ -1,98 +1,479 @@
-<!DOCTYPE html>
-<meta  http-equiv="content-Type" content="text/html"; charset="utf-8" >
-<html>
-<head>
-<script src="{{url_for('static', filename='js/jquery.min.js')}}">
-</script>
-<script src="{{url_for('static', filename='js/test.js')}}">
-</script>
-<script src="{{url_for('static', filename='js/layer/layerConfig.js.js')}}">
-</script>
-<script src="{{url_for('static', filename='js/layer/layer.js')}}">
-</script>
-<script src="{{url_for('static', filename='js/bootstrap.js')}}">
-</script>
-<script src="{{url_for('static', filename='js/bootstrap.min.js')}}">
-</script>
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/movie.css')}}">
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.css')}}">
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap.min.css')}}">
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.css')}}">
-<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='CSS/bootstrap-theme.min.css')}}">
-</head>
-<title>惬意嗨go</title>
-<body>
-<div class="bth-outest">
-  <div class="bth-out0">
-   <a href="{{url_for('home')}}" class="top" id="logo">嗨go社区</a>
+{% extends "base.html" %}
+{% block title %}Movie — 羚羊之家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>🎬 电影榜单</h1>
+</div>
+
+<div class="movie-layout">
+  <!-- 主区：搜索框（居中）+ 榜单 -->
+  <div class="movie-main">
+    <div class="movie-search-wrap">
+      <form class="movie-search" onsubmit="return doSearch(event)">
+        <input id="movieQuery" type="text" autocomplete="off"
+               placeholder="搜索电影 / 剧集…">
+        <button class="btn-accent" type="submit">搜索</button>
+      </form>
+    </div>
+
+    <!-- 搜索结果（默认隐藏） -->
+    <div id="searchSection" class="search-section" style="display:none">
+      <div class="section-head">
+        <span id="searchTitle">搜索结果</span>
+        <button class="btn-ghost" onclick="closeSearch()">← 返回榜单</button>
+      </div>
+      <div id="searchList" class="rank-list"></div>
+    </div>
+
+    <!-- 榜单 -->
+    <div id="rankSection">
+      <div class="movie-tabs">
+        <button class="movie-tab active" data-kind="movie" onclick="switchKind('movie')">电影</button>
+        <button class="movie-tab" data-kind="tv" onclick="switchKind('tv')">剧集</button>
+      </div>
+      <div class="movie-tabs movie-subtabs">
+        <button class="movie-tab active" data-region="domestic" onclick="switchRegion('domestic')">国内</button>
+        <button class="movie-tab" data-region="foreign" onclick="switchRegion('foreign')">国外</button>
+      </div>
+      <!-- 年份时间线 -->
+      <div class="year-timeline">
+        <div class="year-timeline-title">选择年份</div>
+        <div class="year-track" id="yearTrack"></div>
+      </div>
+
+      <div class="rank-caption"><b id="capYear">{{ year }}</b> 年度评分最高 · 前 15</div>
+      <div id="rankList" class="rank-list">
+        <div class="movie-loading">加载中…</div>
+      </div>
+    </div>
   </div>
-  <div>
-  <ul>
-   <li><a href="{{url_for('movie')}}" class="top">惬意电影</a></li>
-   <li><a href="#" class="top">惬意音乐</a></li>
-   <li><a href="#" class="top">惬意IT</a></li>
-   <li><a href="#" class="top">惬意篮球</a></li>
-   <li><a href="#" class="top">嗨go产品</a></li>
-  </ul>
- </div>
+
+  <!-- 右侧：搜索历史 -->
+  <aside class="movie-history">
+    <div class="section-head">
+      <span>搜索历史</span>
+      <button class="history-clear" id="clearAllBtn" onclick="clearHistory()">清空</button>
+    </div>
+    <div id="historyList" class="history-list"></div>
+  </aside>
 </div>
-<div class="bth-next1">
- <div class="left">
-  <ul>
-   <p class="aleft"></p><br/>
-   <p class="aleft">.....：</p>
- </ul>
- </div>
-</div>
-<div class="bth-next2">
- <div calss="maintext" color="#1D6040" size="10">
-<div class="container-fluid">
-	<div class="row-fluid">
-		<div class="span12">
-			<form class="form-search">
-                <label>电影名查询：</label>
-				<input class="input-medium search-query" type="text" id="movie_name"/> <button class="query" type="button" onclick="query()">查找</button>
-			</form>
-			<table class="table table-striped">
-				<thead>
-					<tr class="success">
-						<th>
-							排名
-						</th>
-						<th>
-							电影名
-						</th>
-						<th>
-							票房
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-                {% for item in value %}
-					<tr>
-						<td>
-                            {{ item.index }}
-						</td>
-						<td>
-							{{ item.Name }}
-						</td>
-                        {% if item.MoneyType == 1 %}
-						<td>
-							{{ item.Money }}万/美元
-						</td>
-                    {% elif item.MoneyType == 2 %}
-                        <td>
-							{{ item.Money }}亿/美元
-						</td>
-                    {% endif %}
-					</tr>
-                {% endfor %}
-				</tbody>
-			</table>
-		</div>
-	</div>
-</div>
- </div>
-</div>
-</body>
-</html>
+{% endblock %}
+
+{% block head %}
+<style>
+  .movie-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .movie-main { min-width: 0; }
+
+  /* 搜索框居中 */
+  .movie-search-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 0.5rem 0 1.75rem;
+  }
+  .movie-search {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 520px;
+  }
+  .movie-search input {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 0.6rem 0.9rem;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .movie-search input:focus { border-color: var(--accent); }
+
+  /* 分区标题 */
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* 标签切换 */
+  .movie-tabs {
+    display: inline-flex;
+    gap: 0.25rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .movie-tab {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.35rem 1.1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .movie-tab:hover { color: var(--text-primary); }
+  .movie-tab.active { background: var(--accent); color: #fff; }
+  .movie-subtabs { margin-left: 0.5rem; }
+
+  .rank-caption {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    margin-bottom: 1rem;
+  }
+
+  /* 榜单列表 */
+  .rank-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .rank-card {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    text-decoration: none;
+    transition: border-color .15s, transform .15s;
+  }
+  .rank-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .rank-no {
+    flex: 0 0 auto;
+    width: 1.9rem;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+  }
+  .rank-card:nth-child(-n+3) .rank-no { color: var(--accent); }
+  .rank-info { flex: 1; min-width: 0; }
+  .rank-title {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rank-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rank-rate {
+    flex: 0 0 auto;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--success);
+    font-family: 'Inter', sans-serif;
+  }
+  .rank-rate small { font-size: 0.7rem; color: var(--text-muted); font-weight: 400; }
+
+  .movie-loading, .movie-empty {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 2rem 0;
+    font-size: 0.9rem;
+  }
+
+  /* 年份时间线 */
+  .year-timeline { margin: 0.5rem 0 1.25rem; }
+  .year-timeline-title {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+  .year-track {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    overflow-x: auto;
+    padding: 0.5rem 0 0.25rem;
+    border-top: 2px solid var(--border);
+  }
+  .year-node {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 58px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-top: -9px;              /* 让圆点压在时间轴上 */
+    color: var(--text-muted);
+    transition: color .15s;
+  }
+  .year-node .year-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2px solid var(--border);
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .year-node .year-num { font-size: 0.85rem; font-family: 'Inter', sans-serif; }
+  .year-node:hover { color: var(--text-primary); }
+  .year-node:hover .year-dot { border-color: var(--accent); }
+  .year-node.active { color: var(--accent); font-weight: 600; }
+  .year-node.active .year-dot { background: var(--accent); border-color: var(--accent); transform: scale(1.15); }
+
+  /* 搜索历史 */
+  .movie-history {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    position: sticky;
+    top: 72px;
+  }
+  .history-clear {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0;
+  }
+  .history-clear:hover { color: var(--danger); }
+  .history-list { display: flex; flex-direction: column; gap: 0.35rem; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.55rem;
+  }
+  .history-text {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .history-text:hover { color: var(--accent); }
+  .history-del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+  }
+  .history-del:hover { color: var(--danger); }
+  .history-empty { color: var(--text-muted); font-size: 0.82rem; text-align: center; padding: 0.5rem 0; }
+
+  @media (max-width: 768px) {
+    .movie-layout { grid-template-columns: 1fr; }
+    .movie-history { position: static; order: -1; }
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var HISTORY_KEY = 'movie_search_history';
+  var currentKind = 'movie';
+  var currentRegion = 'domestic';
+  var currentYear = {{ year }};
+  var MIN_YEAR = {{ year }} - 15;   // 时间线覆盖最近 16 年
+
+  function escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── 榜单 ────────────────────────────────────────────────────────────────
+  function renderCards(container, items) {
+    if (!items || !items.length) {
+      container.innerHTML = '<div class="movie-empty">暂无数据</div>';
+      return;
+    }
+    container.innerHTML = items.map(function (it, i) {
+      var meta = [];
+      if (it.directors && it.directors.length) meta.push(it.directors.join(' / '));
+      if (it.casts && it.casts.length) meta.push(it.casts.slice(0, 3).join(' / '));
+      if (it.year) meta.push(it.year);
+      if (it.type) meta.push(it.type === 'movie' ? '电影' : '剧集');
+      var rate = it.rate
+        ? '<div class="rank-rate">' + escHtml(it.rate) + '<small> 分</small></div>'
+        : '<div class="rank-rate" style="color:var(--text-muted);font-size:0.8rem">暂无评分</div>';
+      return '<a class="rank-card" href="' + escHtml(it.url) + '" target="_blank" rel="noopener">' +
+               '<div class="rank-no">' + (i + 1) + '</div>' +
+               '<div class="rank-info">' +
+                 '<div class="rank-title">' + escHtml(it.title) + '</div>' +
+                 '<div class="rank-meta">' + escHtml(meta.join(' · ')) + '</div>' +
+               '</div>' +
+               rate +
+             '</a>';
+    }).join('');
+  }
+
+  function loadRank() {
+    var list = document.getElementById('rankList');
+    list.innerHTML = '<div class="movie-loading">加载中…</div>';
+    document.getElementById('capYear').textContent = currentYear;
+    fetch('/movie/top?kind=' + encodeURIComponent(currentKind) +
+          '&region=' + encodeURIComponent(currentRegion) +
+          '&year=' + encodeURIComponent(currentYear))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.code === 1) renderCards(list, data.items);
+        else list.innerHTML = '<div class="movie-empty">加载失败</div>';
+      })
+      .catch(function () { list.innerHTML = '<div class="movie-empty">加载失败，请稍后再试</div>'; });
+  }
+
+  // ── 年份时间线 ──────────────────────────────────────────────────────────
+  function buildYearTimeline() {
+    var track = document.getElementById('yearTrack');
+    var html = '';
+    for (var y = currentYear; y >= MIN_YEAR; y--) {
+      html += '<button class="year-node' + (y === currentYear ? ' active' : '') +
+              '" data-year="' + y + '">' +
+                '<span class="year-dot"></span>' +
+                '<span class="year-num">' + y + '</span>' +
+              '</button>';
+    }
+    track.innerHTML = html;
+  }
+
+  function switchYear(year) {
+    if (year === currentYear) return;
+    currentYear = year;
+    document.querySelectorAll('.year-node').forEach(function (b) {
+      b.classList.toggle('active', Number(b.dataset.year) === year);
+    });
+    loadRank();
+  }
+
+  document.getElementById('yearTrack').addEventListener('click', function (ev) {
+    var node = ev.target.closest('.year-node');
+    if (node) switchYear(Number(node.dataset.year));
+  });
+
+  function switchKind(kind) {
+    if (kind === currentKind) return;
+    currentKind = kind;
+    document.querySelectorAll('.movie-tab[data-kind]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.kind === kind);
+    });
+    loadRank();
+  }
+
+  function switchRegion(region) {
+    if (region === currentRegion) return;
+    currentRegion = region;
+    document.querySelectorAll('.movie-tab[data-region]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.region === region);
+    });
+    loadRank();
+  }
+
+  // ── 搜索 ────────────────────────────────────────────────────────────────
+  function doSearch(e) {
+    e.preventDefault();
+    var q = document.getElementById('movieQuery').value.trim();
+    if (!q) return false;
+    addHistory(q);
+    runSearch(q);
+    return false;
+  }
+
+  function runSearch(q) {
+    document.getElementById('movieQuery').value = q;
+    document.getElementById('rankSection').style.display = 'none';
+    var sec = document.getElementById('searchSection');
+    sec.style.display = '';
+    document.getElementById('searchTitle').textContent = '“' + q + '” 的搜索结果';
+    var list = document.getElementById('searchList');
+    list.innerHTML = '<div class="movie-loading">搜索中…</div>';
+    fetch('/movie/search?q=' + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (data) { renderCards(list, data.items); })
+      .catch(function () { list.innerHTML = '<div class="movie-empty">搜索失败，请稍后再试</div>'; });
+  }
+
+  function closeSearch() {
+    document.getElementById('searchSection').style.display = 'none';
+    document.getElementById('rankSection').style.display = '';
+  }
+
+  // ── 搜索历史（localStorage） ─────────────────────────────────────────────
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function setHistory(arr) {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+    renderHistory();
+  }
+  function addHistory(q) {
+    var arr = getHistory().filter(function (x) { return x !== q; });
+    arr.unshift(q);
+    if (arr.length > 20) arr = arr.slice(0, 20);
+    setHistory(arr);
+  }
+  function delHistory(q) {
+    setHistory(getHistory().filter(function (x) { return x !== q; }));
+  }
+  function clearHistory() {
+    setHistory([]);
+  }
+  function renderHistory() {
+    var box = document.getElementById('historyList');
+    var arr = getHistory();
+    if (!arr.length) {
+      box.innerHTML = '<div class="history-empty">暂无搜索记录</div>';
+      return;
+    }
+    box.innerHTML = arr.map(function (q) {
+      var e = escHtml(q);
+      return '<div class="history-item">' +
+               '<span class="history-text" data-q="' + e + '" title="' + e + '">' + e + '</span>' +
+               '<button class="history-del" data-q="' + e + '" title="删除">×</button>' +
+             '</div>';
+    }).join('');
+  }
+
+  // 事件委托：避免把查询词内联进 onclick 字符串导致引号/转义问题
+  document.getElementById('historyList').addEventListener('click', function (ev) {
+    var t = ev.target.closest('.history-text, .history-del');
+    if (!t) return;
+    var q = t.getAttribute('data-q');
+    if (t.classList.contains('history-del')) delHistory(q);
+    else runSearch(q);
+  });
+
+  // ── 初始化 ──────────────────────────────────────────────────────────────
+  renderHistory();
+  buildYearTimeline();
+  loadRank();
+</script>
+{% endblock %}

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory
+from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from Module import MPhotoInfo, MnoteInfo
 from Sqls import storage
 import markdown
 import html as html_module
+import requests
 import os
 import time
 import random
@@ -375,31 +376,143 @@ def note_update():
     return '{"code":1,"msgs":"保存成功"}'
 
 
-# ── Game ───────────────────────────────────────────────────────────────────
+# ── Movie ──────────────────────────────────────────────────────────────────
 
-GAMES = [
-    {
-        "KeyID":   "game-td",
-        "Name":    "军事塔防",
-        "Icon":    "🪖",
-        "Remark":  "建造营地、训练部队，驻守高墙缺口，抵御十波来袭的敌军。",
-        "Url":     "/game/td",
-    },
-]
+DOUBAN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/122.0 Safari/537.36",
+    "Referer": "https://movie.douban.com/",
+}
+MOVIE_KINDS = {"movie": "电影", "tv": "电视剧"}
+# 地区细分：国内取「华语」，国外聚合美/日/韩/英后合并去重
+MOVIE_REGIONS = {
+    "domestic": ["华语"],
+    "foreign":  ["美国", "日本", "韩国", "英国"],
+}
+MOVIE_CACHE_TTL = 6 * 3600  # 缓存有效期（秒）
 
 
-@app.route('/game')
-def game():
+def _douban_query(tags, year):
+    """按 类型+地区 标签查询豆瓣某年条目，返回规范化后的带评分列表。"""
+    resp = requests.get(
+        "https://movie.douban.com/j/new_search_subjects",
+        params={
+            "sort": "S",                 # 按评分排序
+            "range": "0,10",
+            "tags": tags,
+            "start": 0,
+            "year_range": f"{year},{year}",
+        },
+        headers=DOUBAN_HEADERS,
+        timeout=12,
+    )
+    resp.raise_for_status()
+    items = []
+    for d in resp.json().get("data", []):
+        rate = d.get("rate", "")
+        if not rate:                     # 未出分的条目跳过，保证按评分展示
+            continue
+        items.append({
+            "id":        d.get("id", ""),
+            "title":     d.get("title", ""),
+            "rate":      rate,
+            "url":       d.get("url", ""),
+            "casts":     d.get("casts", []),
+            "directors": d.get("directors", []),
+        })
+    return items
+
+
+def _fetch_douban_top(kind, region, year, limit=15):
+    """拉取指定类型、地区、年份评分最高的若干条目（合并去重后按评分降序）。"""
+    tag = MOVIE_KINDS.get(kind, "电影")
+    regions = MOVIE_REGIONS.get(region, MOVIE_REGIONS["domestic"])
+    merged = {}
+    for rg in regions:
+        for it in _douban_query(f"{tag},{rg}", year):
+            merged.setdefault(it["id"] or it["title"], it)
+    items = list(merged.values())
+    items.sort(key=lambda x: float(x["rate"] or 0), reverse=True)
+    return items[:limit]
+
+
+def _get_movie_top(kind, region, year):
+    """带缓存与容错地返回榜单：优先用新鲜缓存，拉取失败则回退旧缓存。"""
+    cache = storage.load("movieinfo")
+    if not isinstance(cache, dict):
+        cache = {}
+    key = f"{kind}_{region}_{year}"
+    entry = cache.get(key)
+    now = int(time.time())
+    if entry and now - entry.get("ts", 0) < MOVIE_CACHE_TTL and entry.get("items"):
+        return entry["items"]
+    try:
+        items = _fetch_douban_top(kind, region, year)
+        cache[key] = {"ts": now, "items": items}
+        storage.save("movieinfo", cache)
+        return items
+    except Exception:
+        # 网络异常时回退到旧缓存，实在没有则返回空
+        return entry.get("items", []) if entry else []
+
+
+@app.route('/movie')
+def movie():
     if not login_cat():
         return redirect(url_for('login'))
-    return render_template('game.html', value=GAMES)
+    year = int(time.strftime("%Y", time.localtime()))
+    return render_template('movie.html', year=year)
 
 
-@app.route('/game/td')
-def game_td():
+@app.route('/movie/top')
+def movie_top():
     if not login_cat():
-        return redirect(url_for('login'))
-    return render_template('game_td.html')
+        return '{"code":0,"msgs":"未登录"}'
+    kind = request.args.get("kind", "movie")
+    if kind not in MOVIE_KINDS:
+        kind = "movie"
+    region = request.args.get("region", "domestic")
+    if region not in MOVIE_REGIONS:
+        region = "domestic"
+    cur_year = int(time.strftime("%Y", time.localtime()))
+    year = request.args.get("year", type=int) or cur_year
+    if year < 1900 or year > cur_year:      # 越界年份回退到当年
+        year = cur_year
+    return jsonify({
+        "code": 1, "kind": kind, "region": region, "year": year,
+        "items": _get_movie_top(kind, region, year),
+    })
+
+
+@app.route('/movie/search')
+def movie_search():
+    if not login_cat():
+        return '{"code":0,"msgs":"未登录"}'
+    q = (request.args.get("q", "") or "").strip()
+    if not q:
+        return jsonify({"code": 1, "items": []})
+    try:
+        resp = requests.get(
+            "https://movie.douban.com/j/subject_suggest",
+            params={"q": q},
+            headers=DOUBAN_HEADERS,
+            timeout=12,
+        )
+        resp.raise_for_status()
+        items = []
+        for d in resp.json():
+            items.append({
+                "title":     d.get("title", ""),
+                "sub_title": d.get("sub_title", ""),
+                "year":      d.get("year", ""),
+                "type":      d.get("type", ""),
+                "episode":   d.get("episode", ""),
+                "cover":     d.get("img", ""),
+                "url":       d.get("url", ""),
+            })
+        return jsonify({"code": 1, "items": items})
+    except Exception:
+        return jsonify({"code": 0, "msgs": "搜索失败，请稍后再试", "items": []})
 
 
 if __name__ == '__main__':
