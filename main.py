@@ -2,11 +2,14 @@
 from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from Module import MPhotoInfo, MnoteInfo
 from Sqls import storage
 import markdown
 import html as html_module
 import requests
+import hmac
+import threading
 import os
 import time
 import random
@@ -15,14 +18,71 @@ import re
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'photo')
 NOTE_PATH     = os.path.join(os.getcwd(), 'note')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+MAX_CONTENT_LENGTH = 20 * 1024 * 1024   # 上传体积上限 20MB，防止超大文件 DoS
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "shiyangS-dev-only-change-in-prod")
+# 部署在 nginx/IIS 反向代理之后：只信任 1 层代理传来的 X-Forwarded-*，
+# 使 request.remote_addr 变为真实客户端 IP（限流依赖它，且不可被随意伪造）。
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+# SECRET_KEY 必须来自环境变量。缺失时用随机密钥兜底（重启后登录失效），
+# 绝不回退到硬编码默认值——公开仓库里的固定密钥会被用来伪造管理员 session。
+_secret = os.environ.get("SECRET_KEY")
+if not _secret:
+    _secret = os.urandom(32).hex()
+    print("[安全警告] 未设置 SECRET_KEY 环境变量，已生成临时随机密钥；"
+          "重启后登录状态会失效。生产环境请配置固定且保密的 SECRET_KEY。")
+app.secret_key = _secret
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['NOTE_PATH']     = NOTE_PATH
+app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-ADMIN_ACCOUNT = "admin"
-ADMIN_PASSWORD = "admin@717613"
+ADMIN_ACCOUNT  = os.environ.get("ADMIN_ACCOUNT", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+if not ADMIN_PASSWORD:
+    ADMIN_PASSWORD = "admin@717613"
+    print("[安全警告] 未设置 ADMIN_PASSWORD 环境变量，正在使用源码内置默认密码。"
+          "该密码已随公开仓库泄露，请立即改用环境变量设置新密码。")
+
+# ── 登录限流 / 失败锁定（进程内内存实现，适用于单 worker） ─────────────────
+_login_lock      = threading.Lock()
+_login_attempts  = {}          # ip -> {"fails": int, "ts": epoch, "until": epoch}
+LOGIN_MAX_FAILS  = 5           # 窗口内允许的最大失败次数
+LOGIN_WINDOW     = 300         # 失败计数滑动窗口（秒）
+LOGIN_LOCK_SECS  = 900         # 触发上限后的锁定时长（秒）
+
+
+def _client_ip():
+    return request.remote_addr or "unknown"
+
+
+def _login_allowed(ip):
+    """返回 (是否允许尝试, 剩余锁定秒数)。"""
+    now = time.time()
+    with _login_lock:
+        rec = _login_attempts.get(ip)
+        if rec and rec["until"] > now:
+            return False, int(rec["until"] - now)
+        return True, 0
+
+
+def _login_fail(ip):
+    now = time.time()
+    with _login_lock:
+        rec = _login_attempts.get(ip)
+        if not rec or now - rec.get("ts", 0) > LOGIN_WINDOW:
+            rec = {"fails": 0, "ts": now, "until": 0}
+        rec["fails"] += 1
+        rec["ts"] = now
+        if rec["fails"] >= LOGIN_MAX_FAILS:
+            rec["until"] = now + LOGIN_LOCK_SECS   # 达到上限：锁定并清零计数
+            rec["fails"] = 0
+        _login_attempts[ip] = rec
+
+
+def _login_reset(ip):
+    with _login_lock:
+        _login_attempts.pop(ip, None)
 
 
 def mark_keyid():
@@ -51,13 +111,22 @@ def login():
 
 @app.route('/login_confirm', methods=['POST'])
 def login_confirm():
+    ip = _client_ip()
+    allowed, wait = _login_allowed(ip)
+    if not allowed:
+        return jsonify({"code": 0, "msgs": f"尝试过于频繁，请 {wait} 秒后再试"})
     useraccount = request.form.get('useraccount', '')
     password    = request.form.get('password', '')
-    if useraccount == ADMIN_ACCOUNT and password == ADMIN_PASSWORD:
+    # 恒定时间比较，避免通过响应耗时侧信道推断账号/密码
+    ok = (hmac.compare_digest(useraccount, ADMIN_ACCOUNT)
+          and hmac.compare_digest(password, ADMIN_PASSWORD))
+    if ok:
+        _login_reset(ip)
         session["useraccount"] = useraccount
         session["username"]    = useraccount
-        return '{"code": 1, "msgs": "登陆成功"}'
-    return '{"code": 0, "msgs": "用户名或密码错误"}'
+        return jsonify({"code": 1, "msgs": "登陆成功"})
+    _login_fail(ip)
+    return jsonify({"code": 0, "msgs": "用户名或密码错误"})
 
 
 @app.route('/logout')
@@ -517,4 +586,6 @@ def movie_search():
 
 if __name__ == '__main__':
     print(os.getcwd())
-    app.run(host='0.0.0.0', port=1111, debug=True)
+    # debug 默认关闭；仅本地调试时设 FLASK_DEBUG=1。生产开 debug 会暴露调试器可致 RCE。
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(host='0.0.0.0', port=1111, debug=debug)
