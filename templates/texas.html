@@ -7,7 +7,7 @@
   <h1>🃏 德州扑克</h1>
   <div style="display:flex;align-items:center;gap:0.75rem">
     <span id="roundMsg" style="font-size:0.85rem;color:var(--text-muted)"></span>
-    <button class="btn-accent" id="newRoundBtn" onclick="startNewRound()">开始新局</button>
+    <button class="btn-accent" id="newRoundBtn" onclick="startNewRound()">开始游戏</button>
   </div>
 </div>
 
@@ -25,12 +25,12 @@
       <div class="community-cards" id="communityCards"></div>
       <div class="table-label">德州扑克</div>
     </div>
-    <!-- 玩家位置（绝对定位在 wrapper 内） -->
-    <div class="player-spot spot-top-left" id="spot-0"></div>
-    <div class="player-spot spot-top-right" id="spot-1"></div>
-    <div class="player-spot spot-left" id="spot-2"></div>
-    <div class="player-spot spot-right" id="spot-3"></div>
-    <div class="player-spot spot-bottom" id="spot-4"></div>
+    <!-- 玩家位置: bots 在上/左/右，玩家在正下方 -->
+    <div class="player-spot spot-top-left" id="spot-1"></div>
+    <div class="player-spot spot-top-right" id="spot-2"></div>
+    <div class="player-spot spot-left" id="spot-3"></div>
+    <div class="player-spot spot-right" id="spot-4"></div>
+    <div class="player-spot spot-bottom" id="spot-0"></div>
   </div>
 
   <!-- 操作栏 -->
@@ -156,6 +156,7 @@
 <script>
   const PHASES = { idle:'等待开始', preflop:'翻牌前', flop:'翻牌', turn:'转牌', river:'河牌', showdown:'摊牌' };
   const SUIT_COLORS = { '♠':'black','♣':'black','♥':'red','♦':'red' };
+  // player[0]=human→spot-0(bottom), player[1..4]=bots→spot-1..4
   const SPOT_IDS = ['spot-0','spot-1','spot-2','spot-3','spot-4'];
 
   async function apiCall(url, body) {
@@ -295,7 +296,9 @@
     }
   }
 
-  // Init
-  loadState();
+  // Init — 页面加载时不自动开始，等待点击「开始游戏」
+  document.getElementById('newRoundBtn').style.display = '';
+  document.getElementById('actionButtons').style.display = 'none';
+  document.getElementById('actionStatus').textContent = '点击「开始游戏」开始对局';
 </script>
 {% endblock %}

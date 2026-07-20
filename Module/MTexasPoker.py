@@ -111,7 +111,13 @@ def _eval_5(cards):
 def evaluate_best_hand(cards_7):
     """从 7 张牌中选出最佳 5 张手牌。
     返回 (hand_type, best_5_cards, description)"""
-    best = None
+    if len(cards_7) < 5:
+        # 不足 5 张牌时（边界情况），按高牌评估
+        ranks = sorted([c.rank for c in cards_7], reverse=True)
+        while len(ranks) < 5:
+            ranks.append(0)
+        return HAND_TYPES['high_card'], list(cards_7), '高牌'
+
     best_val = (-1, [])
     best_combo = None
 

@@ -80,14 +80,8 @@
     .then(data => {
       if (data.code === 1) {
         noteDeleteModal.hide();
-        const listEl = document.getElementById('note-' + deleteNoteKeyID);
-        if (listEl) listEl.remove();
-        const tlEl = document.getElementById('tl-note-' + deleteNoteKeyID);
-        if (tlEl) tlEl.remove();
-        const idx = NOTE_DATA.findIndex(n => n.KeyID === deleteNoteKeyID);
-        if (idx !== -1) NOTE_DATA.splice(idx, 1);
-        const tlContainer = document.getElementById('note-timeline');
-        if (tlContainer) { delete tlContainer.dataset.built; tlContainer.innerHTML = ''; }
+        // 简单刷新：确保列表和时间轴视图都正确更新
+        window.location.reload();
       }
     });
   });
