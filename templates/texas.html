@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}德州扑克 — 羚羊之家{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('game_index') }}" class="btn-ghost" style="font-size:0.82rem">← 游戏库</a>
+  <h1>🃏 德州扑克</h1>
+  <div style="display:flex;align-items:center;gap:0.75rem">
+    <span id="roundMsg" style="font-size:0.85rem;color:var(--text-muted)"></span>
+    <button class="btn-accent" id="newRoundBtn" onclick="startNewRound()">开始新局</button>
+  </div>
+</div>
+
+<div class="poker-layout">
+  <!-- 信息栏 -->
+  <div class="poker-info-bar">
+    <div class="info-item"><span class="info-label">底池</span><span class="info-value" id="potDisplay">0</span></div>
+    <div class="info-item"><span class="info-label">盲注</span><span class="info-value">10/20</span></div>
+    <div class="info-item"><span class="info-label">阶段</span><span class="info-value" id="phaseDisplay">等待开始</span></div>
+  </div>
+
+  <!-- 桌面容器 -->
+  <div class="table-wrapper" id="tableWrapper">
+    <div class="poker-table" id="pokerTable">
+      <div class="community-cards" id="communityCards"></div>
+      <div class="table-label">德州扑克</div>
+    </div>
+    <!-- 玩家位置（绝对定位在 wrapper 内） -->
+    <div class="player-spot spot-top-left" id="spot-0"></div>
+    <div class="player-spot spot-top-right" id="spot-1"></div>
+    <div class="player-spot spot-left" id="spot-2"></div>
+    <div class="player-spot spot-right" id="spot-3"></div>
+    <div class="player-spot spot-bottom" id="spot-4"></div>
+  </div>
+
+  <!-- 操作栏 -->
+  <div class="action-bar" id="actionBar">
+    <div class="action-left">
+      <span id="actionStatus" style="font-size:0.85rem;color:var(--text-muted)">点击「开始新局」</span>
+    </div>
+    <div class="action-right" id="actionButtons" style="display:none">
+      <input type="range" id="raiseSlider" min="0" max="100" value="0" class="raise-slider" oninput="updateRaiseLabel()">
+      <span id="raiseLabel" class="raise-label">加注: 0</span>
+      <button class="btn-danger" onclick="playerAction('fold')">弃牌</button>
+      <button class="btn-ghost" id="callBtn" onclick="playerAction('call')">过牌</button>
+      <button class="btn-accent" id="raiseBtn" onclick="playerAction('raise')">加注</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+  .poker-layout { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .poker-info-bar { display: flex; gap: 1.5rem; justify-content: center; padding: 0.25rem 0; }
+  .info-item { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+  .info-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .info-value { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
+
+  /* ── Table wrapper (relative parent for player spots) ── */
+  .table-wrapper { position: relative; margin: 0 auto; width: 100%; max-width: 800px; }
+
+  /* ── Table ── */
+  .poker-table {
+    width: 100%;
+    aspect-ratio: 1.8 / 1;
+    background: radial-gradient(ellipse at center, #2d6a4f 0%, #1b4332 70%, #0d2818 100%);
+    border-radius: 50%;
+    border: 6px solid #4a3728;
+    box-shadow: 0 0 0 12px #2c1810, 0 0 0 16px #1a0f08, 0 8px 32px rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    margin: 2rem 0;
+  }
+  .table-label {
+    position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%);
+    font-size: 0.8rem; color: rgba(255,255,255,0.18);
+    letter-spacing: 0.3em; font-weight: 600; pointer-events: none;
+  }
+
+  .community-cards { display: flex; gap: 0.5rem; z-index: 2; }
+  .card-placeholder {
+    width: 50px; height: 72px; border-radius: 5px;
+    border: 1.5px dashed rgba(255,255,255,0.15); background: rgba(0,0,0,0.1);
+  }
+  .poker-card {
+    width: 50px; height: 72px; border-radius: 5px; background: #fff;
+    border: 1px solid #ccc; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    transition: transform 0.3s;
+  }
+  .poker-card.red { color: #d32f2f; } .poker-card.black { color: #212121; }
+  .poker-card .card-rank { font-size: 0.95rem; font-weight: 700; line-height: 1; }
+  .poker-card .card-suit { font-size: 0.85rem; line-height: 1; }
+  .poker-card.back {
+    background: linear-gradient(135deg, #1a3a5c, #0d2137); border-color: #0d2137;
+  }
+  .poker-card.back::after {
+    content: ''; position: absolute; inset: 3px;
+    border: 1.5px solid rgba(255,255,255,0.2); border-radius: 2px;
+  }
+
+  /* ── Player spots (absolute positioned around the table) ── */
+  .player-spot {
+    position: absolute; display: flex; flex-direction: column; align-items: center;
+    gap: 0.2rem; z-index: 5; min-width: 110px;
+  }
+  /* 5 个位置 */
+  .spot-top-left  { top: -5%; left: 5%; }
+  .spot-top-right { top: -5%; right: 5%; }
+  .spot-left      { top: 45%; left: -2%; transform: translateY(-50%); }
+  .spot-right     { top: 45%; right: -2%; transform: translateY(-50%); }
+  .spot-bottom    { bottom: -2%; left: 50%; transform: translateX(-50%); }
+
+  .player-spot .pname { font-size: 0.78rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; }
+  .player-spot .pchips { font-size: 0.68rem; color: var(--text-muted); }
+  .player-spot .pbet { font-size: 0.7rem; color: var(--accent); font-weight: 600; min-height: 1em; }
+  .player-spot .pbadges { display: flex; gap: 0.2rem; flex-wrap: wrap; justify-content: center; }
+  .pbadge {
+    font-size: 0.62rem; padding: 0.08rem 0.4rem; border-radius: 10px; font-weight: 500; white-space: nowrap;
+  }
+  .pbadge-d { background: var(--accent-soft); color: var(--accent); }
+  .pbadge-fold { background: rgba(212,120,110,0.12); color: var(--danger); }
+  .pbadge-allin { background: rgba(122,184,138,0.12); color: var(--success); }
+  .pbadge-active { background: var(--accent); color: #fff; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+  .player-spot .pcards { display: flex; gap: 0.2rem; }
+  .player-spot .phand { font-size: 0.62rem; color: var(--accent); margin-top: 1px; }
+  .player-spot.highlight { filter: drop-shadow(0 0 8px var(--accent)); }
+
+  /* ── Action bar ── */
+  .action-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.7rem 1rem; background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    gap: 1rem; box-shadow: var(--shadow-sm); flex-wrap: wrap;
+  }
+  .action-right { display: flex; align-items: center; gap: 0.5rem; }
+  .raise-slider { width: 100px; accent-color: var(--accent); }
+  .raise-label { font-size: 0.78rem; color: var(--text-muted); min-width: 60px; }
+
+  @media (max-width: 640px) {
+    .poker-table { aspect-ratio: 1.4 / 1; }
+    .poker-card, .card-placeholder { width: 36px; height: 52px; }
+    .poker-card .card-rank { font-size: 0.7rem; } .poker-card .card-suit { font-size: 0.6rem; }
+    .community-cards { gap: 0.25rem; }
+    .player-spot .pname { font-size: 0.68rem; }
+    .player-spot .pchips { font-size: 0.62rem; }
+    .spot-left { left: -6%; } .spot-right { right: -6%; }
+  }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const PHASES = { idle:'等待开始', preflop:'翻牌前', flop:'翻牌', turn:'转牌', river:'河牌', showdown:'摊牌' };
+  const SUIT_COLORS = { '♠':'black','♣':'black','♥':'red','♦':'red' };
+  const SPOT_IDS = ['spot-0','spot-1','spot-2','spot-3','spot-4'];
+
+  async function apiCall(url, body) {
+    const opts = { method: body ? 'POST' : 'GET' };
+    if (body) { opts.headers = {'Content-Type':'application/x-www-form-urlencoded'}; opts.body = new URLSearchParams(body); }
+    const r = await fetch(url, opts);
+    return r.json();
+  }
+
+  async function startNewRound() {
+    const data = await apiCall('/api/texas/new', {});
+    if (data.code === 1) renderState(data.state);
+  }
+
+  async function playerAction(action) {
+    const body = { action };
+    if (action === 'raise') body.amount = parseInt(document.getElementById('raiseSlider').value);
+    const data = await apiCall('/api/texas/action', body);
+    if (data.code === 1) renderState(data.state);
+    else document.getElementById('actionStatus').textContent = data.msgs || '操作失败';
+  }
+
+  async function loadState() {
+    const data = await apiCall('/api/texas/state');
+    if (data.code === 1) renderState(data.state);
+  }
+
+  function updateRaiseLabel() {
+    document.getElementById('raiseLabel').textContent = '加注: ' + document.getElementById('raiseSlider').value;
+  }
+
+  function renderCard(c) {
+    const el = document.createElement('div');
+    el.className = 'poker-card ' + (SUIT_COLORS[c.suit] || 'black');
+    el.innerHTML = '<span class="card-rank">' + (c.name ? c.name.slice(0,-1) : '') + '</span>' +
+                   '<span class="card-suit">' + (c.suit || '') + '</span>';
+    return el;
+  }
+
+  function renderBackCard() {
+    const el = document.createElement('div');
+    el.className = 'poker-card back';
+    return el;
+  }
+
+  function renderState(state) {
+    document.getElementById('potDisplay').textContent = state.pot;
+    document.getElementById('phaseDisplay').textContent = PHASES[state.phase] || state.phase;
+    document.getElementById('roundMsg').textContent = state.message || '';
+
+    // Community cards
+    const cc = document.getElementById('communityCards');
+    cc.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      if (i < state.community_cards.length)
+        cc.appendChild(renderCard(state.community_cards[i]));
+      else {
+        const ph = document.createElement('div'); ph.className = 'card-placeholder'; cc.appendChild(ph);
+      }
+    }
+
+    // Players
+    state.players.forEach((p, i) => {
+      const spot = document.getElementById(SPOT_IDS[i]);
+      if (!spot) return;
+
+      let cardsHtml = '<div class="pcards">';
+      if (p.hole_cards && p.hole_cards.length) {
+        p.hole_cards.forEach(c => {
+          if (c.rank === 0) cardsHtml += '<div class="poker-card back"></div>';
+          else {
+            const color = SUIT_COLORS[c.suit] || 'black';
+            cardsHtml += '<div class="poker-card ' + color + '">' +
+                         '<span class="card-rank">' + (c.name ? c.name.slice(0,-1) : '') + '</span>' +
+                         '<span class="card-suit">' + c.suit + '</span></div>';
+          }
+        });
+      }
+      cardsHtml += '</div>';
+
+      let badges = '';
+      if (i === state.dealer_idx) badges += '<span class="pbadge pbadge-d">D</span>';
+      if (p.folded) badges += '<span class="pbadge pbadge-fold">已弃牌</span>';
+      if (p.all_in) badges += '<span class="pbadge pbadge-allin">All-in</span>';
+      if (!state.round_over && i === state.current_player_idx && !p.folded && !p.all_in)
+        badges += '<span class="pbadge pbadge-active">行动中</span>';
+
+      const handDesc = p.hand_desc ? '<div class="phand">' + p.hand_desc + '</div>' : '';
+      const bet = p.current_bet > 0 ? '<div class="pbet">下注 ' + p.current_bet + '</div>' : '<div class="pbet"></div>';
+
+      spot.innerHTML =
+        '<div class="pname">' + p.name + '</div>' +
+        '<div class="pchips">💰 ' + p.chips + '</div>' + bet +
+        '<div class="pbadges">' + badges + '</div>' + handDesc + cardsHtml;
+
+      // Highlight current player
+      spot.classList.toggle('highlight', !state.round_over && i === state.current_player_idx && !p.folded && !p.all_in);
+    });
+
+    // Action bar
+    const actionBar = document.getElementById('actionButtons');
+    const actionStatus = document.getElementById('actionStatus');
+    const newBtn = document.getElementById('newRoundBtn');
+
+    if (state.round_over) {
+      actionBar.style.display = 'none';
+      const winners = state.winners || [];
+      if (winners.length) {
+        actionStatus.innerHTML = '<span style="color:var(--accent);font-weight:600">🏆 ' +
+          winners.map(w => w.name + ' 赢得 ' + w.amount + ' 筹码（' + w.hand_desc + '）').join('，') + '</span>';
+      }
+      newBtn.style.display = '';
+    } else {
+      const human = state.players.find(p => p.is_human);
+      const current = state.players[state.current_player_idx];
+      if (human && current && current.is_human && !human.folded && !human.all_in) {
+        actionBar.style.display = '';
+        const callAmt = state.current_bet - (human.current_bet || 0);
+        const callBtn = document.getElementById('callBtn');
+        if (callAmt === 0) {
+          callBtn.textContent = '过牌'; callBtn.className = 'btn-ghost';
+        } else {
+          callBtn.textContent = '跟注 ' + callAmt; callBtn.className = 'btn-accent';
+        }
+        const maxRaise = human.chips + (human.current_bet || 0);
+        const minRaise = state.current_bet + 20;
+        const slider = document.getElementById('raiseSlider');
+        slider.min = minRaise; slider.max = maxRaise;
+        slider.value = Math.max(minRaise, Math.min(minRaise * 2, maxRaise));
+        updateRaiseLabel();
+        actionStatus.textContent = '轮到你了 — 请操作';
+      } else {
+        actionBar.style.display = 'none';
+        actionStatus.textContent = state.message || '等待中…';
+      }
+      newBtn.style.display = 'none';
+    }
+  }
+
+  // Init
+  loadState();
+</script>
+{% endblock %}

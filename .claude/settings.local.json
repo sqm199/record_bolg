@@ -41,7 +41,11 @@
       "Bash(curl *)",
       "Bash(iconv -f utf-8 -t utf-8)",
       "Bash(SECRET_KEY=test ADMIN_PASSWORD=x .venv/Scripts/python.exe -c \"import main; print\\('✅ app 加载成功, 限流函数:', callable\\(main._login_allowed\\), '| ProxyFix已挂载:', 'ProxyFix' in type\\(main.app.wsgi_app\\).__name__\\)\")",
-      "Bash(SECRET_KEY=test ADMIN_PASSWORD=x PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import main; print\\('app loaded ok | login limiter callable:', callable\\(main._login_allowed\\), '| wsgi wrapper:', type\\(main.app.wsgi_app\\).__name__\\)\")"
+      "Bash(SECRET_KEY=test ADMIN_PASSWORD=x PYTHONUTF8=1 .venv/Scripts/python.exe -c \"import main; print\\('app loaded ok | login limiter callable:', callable\\(main._login_allowed\\), '| wsgi wrapper:', type\\(main.app.wsgi_app\\).__name__\\)\")",
+      "Bash(mv -v Web.config deploy/iis/)",
+      "Bash(mv -v nginx/record_bolg.conf deploy/nginx/)",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "Bash(taskkill //F //IM python.exe)"
     ]
   }
 }

@@ -9,27 +9,101 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='CSS/dark.css') }}">
   <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-card { width: 100%; max-width: 400px; padding: 2rem; }
-    .login-brand { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .login-sub  { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.75rem; }
-    .field-label { color: var(--text-muted); font-size: 0.82rem; display: block; margin-bottom: 0.35rem; }
-    .error-msg { color: var(--danger); font-size: 0.82rem; min-height: 1.2rem; margin-top: 0.5rem; }
-    .btn-accent { width: 100%; display: block; justify-content: center; padding: 0.65rem; margin-top: 0.5rem; font-size: 0.95rem; }
-    .login-footer {
-      position: fixed;
-      left: 50%;
-      bottom: 1rem;
-      transform: translateX(-50%);
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-align: center;
+    body {
+      display: flex; align-items: center; justify-content: center; min-height: 100vh;
+      background: linear-gradient(135deg, #fdf8f0 0%, #f9efe2 40%, #f5f0e8 100%);
     }
-    .login-footer a { color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
-    .login-footer a:hover { color: var(--accent); }
+    .login-card {
+      width: 100%; max-width: 400px; padding: 2.5rem 2rem;
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03);
+      border: 1px solid #e8ddd0;
+    }
+    .login-brand { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.2rem; color: #3d362d; letter-spacing: 0.03em; }
+    .login-sub  { color: #9a8e7d; font-size: 0.85rem; margin-bottom: 2rem; }
+    .field-label { color: #9a8e7d; font-size: 0.82rem; display: block; margin-bottom: 0.35rem; }
+    .error-msg { color: #d4786e; font-size: 0.82rem; min-height: 1.2rem; margin-top: 0.5rem; }
+    .btn-accent {
+      width: 100%; display: block; justify-content: center;
+      padding: 0.65rem; margin-top: 0.5rem; font-size: 0.95rem;
+      background: #c4907c; color: #fff; border: none; border-radius: 8px;
+      cursor: pointer; font-weight: 500;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(196,144,124,0.25);
+    }
+    .btn-accent:hover { background: #b07a66; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(196,144,124,0.35); }
+    .btn-accent:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .login-footer {
+      position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%);
+      font-size: 0.8rem; color: #9a8e7d; text-align: center;
+    }
+    .login-footer a { color: #9a8e7d; text-decoration: none; transition: color 0.2s; }
+    .login-footer a:hover { color: #c4907c; }
+    .form-control-dark {
+      background: #faf6ef; border: 1px solid #e8ddd0; color: #3d362d;
+      border-radius: 8px; padding: 0.65rem 0.9rem; width: 100%;
+      font-size: 0.95rem; outline: none; font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+    .form-control-dark:focus {
+      border-color: #c4907c;
+      box-shadow: 0 0 0 3px rgba(196,144,124,0.12);
+    }
+    .form-control-dark::placeholder { color: #c5b9a8; }
+
+    /* ── Theme toggle ── */
+    .theme-toggle {
+      position: fixed; top: 1rem; right: 1rem;
+      background: rgba(255,255,255,0.7); border: 1px solid #e8ddd0;
+      backdrop-filter: blur(6px);
+      border-radius: 50%; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1rem; line-height: 1; padding: 0;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      z-index: 10;
+    }
+    .theme-toggle:hover { background: #f2e4dc; border-color: #c4907c; transform: rotate(15deg); }
+    .theme-toggle .theme-icon-dark { display: none; }
+    html[data-theme="dark"] .theme-toggle { background: rgba(35,37,46,0.85); border-color: #353845; }
+    html[data-theme="dark"] .theme-toggle .theme-icon-light { display: none; }
+    html[data-theme="dark"] .theme-toggle .theme-icon-dark { display: inline; }
+
+    /* ── Dark mode overrides ── */
+    html[data-theme="dark"] body {
+      background: linear-gradient(135deg, #1b1d24 0%, #20222b 40%, #1a1d25 100%);
+    }
+    html[data-theme="dark"] .login-card {
+      background: #23252e; border-color: #353845;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
+    }
+    html[data-theme="dark"] .login-brand { color: #ddd8d0; }
+    html[data-theme="dark"] .login-sub { color: #8a8580; }
+    html[data-theme="dark"] .field-label { color: #8a8580; }
+    html[data-theme="dark"] .error-msg { color: #d48076; }
+    html[data-theme="dark"] .login-footer,
+    html[data-theme="dark"] .login-footer a { color: #6a6560; }
+    html[data-theme="dark"] .login-footer a:hover { color: #c4a088; }
+    html[data-theme="dark"] .form-control-dark {
+      background: #1e2028; border-color: #353845; color: #ddd8d0;
+    }
+    html[data-theme="dark"] .form-control-dark:focus {
+      border-color: #c4a088; box-shadow: 0 0 0 3px rgba(196,160,136,0.15);
+    }
+    html[data-theme="dark"] .form-control-dark::placeholder { color: #5e5a54; }
+    html[data-theme="dark"] .btn-accent {
+      background: #c4a088; box-shadow: 0 2px 8px rgba(196,160,136,0.2);
+    }
+    html[data-theme="dark"] .btn-accent:hover {
+      background: #b08868; box-shadow: 0 4px 12px rgba(196,160,136,0.3);
+    }
   </style>
 </head>
 <body>
+  <button id="themeToggle" class="theme-toggle" title="切换主题" aria-label="切换日间/黑夜模式">
+    <span class="theme-icon-light">🌙</span>
+    <span class="theme-icon-dark">☀️</span>
+  </button>
   <div class="card-dark login-card">
     <div class="login-brand">🦌 羚羊之家</div>
     <div class="login-sub">请登录以继续</div>
@@ -52,6 +126,24 @@
   </footer>
 
   <script>
+    // ── Theme Toggle ──────────────────────────────────────────────────────────
+    (function() {
+      const KEY = 'theme';
+      const html = document.documentElement;
+      const saved = localStorage.getItem(KEY);
+      if (saved === 'dark') html.setAttribute('data-theme', 'dark');
+      document.getElementById('themeToggle').addEventListener('click', function() {
+        const isDark = html.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          html.removeAttribute('data-theme');
+          localStorage.setItem(KEY, 'light');
+        } else {
+          html.setAttribute('data-theme', 'dark');
+          localStorage.setItem(KEY, 'dark');
+        }
+      });
+    })();
+
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const btn = document.getElementById('loginBtn');

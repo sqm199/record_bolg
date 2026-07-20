@@ -5,8 +5,8 @@
 <div class="page-header">
   <h1>照片</h1>
   <div class="view-toggle">
-    <button class="view-btn active" data-view="grid" onclick="switchPhotoView('grid')">⊞ 网格</button>
-    <button class="view-btn" data-view="timeline" onclick="switchPhotoView('timeline')">≡ 时间轴</button>
+    <button class="view-btn" data-view="grid" onclick="switchPhotoView('grid')">⊞ 网格</button>
+    <button class="view-btn active" data-view="timeline" onclick="switchPhotoView('timeline')">≡ 时间轴</button>
   </div>
 </div>
 
@@ -254,10 +254,11 @@
     localStorage.setItem('photo_view', view);
   }
 
-  // 恢复上次视图偏好
+  // 默认时间轴视图，用户切换后记住偏好
   (function () {
     var saved = localStorage.getItem('photo_view');
-    if (saved === 'timeline') switchPhotoView('timeline');
+    if (!saved || saved === 'timeline') switchPhotoView('timeline');
+    else switchPhotoView('grid');
   })();
 </script>
 {% endblock %}

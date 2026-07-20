@@ -6,8 +6,8 @@
   <h1>笔记</h1>
   <div style="display:flex;align-items:center;gap:0.5rem">
     <div class="view-toggle">
-      <button class="view-btn active" data-view="list" onclick="switchNoteView('list')">≡ 列表</button>
-      <button class="view-btn" data-view="timeline" onclick="switchNoteView('timeline')">○ 时间轴</button>
+      <button class="view-btn" data-view="list" onclick="switchNoteView('list')">≡ 列表</button>
+      <button class="view-btn active" data-view="timeline" onclick="switchNoteView('timeline')">○ 时间轴</button>
     </div>
     <a href="{{ url_for('note_new') }}" class="btn-accent">＋ 新建笔记</a>
   </div>
@@ -184,10 +184,11 @@
     localStorage.setItem('note_view', view);
   }
 
-  // 恢复上次视图偏好
+  // 默认时间轴视图，用户切换后记住偏好
   (function () {
     var saved = localStorage.getItem('note_view');
-    if (saved === 'timeline') switchNoteView('timeline');
+    if (!saved || saved === 'timeline') switchNoteView('timeline');
+    else switchNoteView('list');
   })();
 </script>
 {% endblock %}

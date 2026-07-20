@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from Module import MPhotoInfo, MnoteInfo
+from Module.MTexasPoker import get_game
 from Sqls import storage
 import markdown
 import html as html_module
@@ -582,6 +583,52 @@ def movie_search():
         return jsonify({"code": 1, "items": items})
     except Exception:
         return jsonify({"code": 0, "msgs": "搜索失败，请稍后再试", "items": []})
+
+
+# ── Game ────────────────────────────────────────────────────────────────────
+
+@app.route('/game')
+def game_index():
+    if not login_cat():
+        return redirect(url_for('login'))
+    return render_template('game.html')
+
+
+@app.route('/game/texas')
+def game_texas():
+    if not login_cat():
+        return redirect(url_for('login'))
+    return render_template('texas.html')
+
+
+@app.route('/api/texas/new', methods=['POST'])
+def api_texas_new():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    game = get_game()
+    game.start_new_round()
+    return jsonify({"code": 1, "state": game.get_state()})
+
+
+@app.route('/api/texas/action', methods=['POST'])
+def api_texas_action():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    game = get_game()
+    action = request.form.get('action', '')
+    amount = request.form.get('amount', type=int) or 0
+    result = game.player_action(action, amount)
+    if 'error' in result:
+        return jsonify({"code": 0, "msgs": result['error']})
+    return jsonify({"code": 1, "state": game.get_state()})
+
+
+@app.route('/api/texas/state', methods=['GET'])
+def api_texas_state():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    game = get_game()
+    return jsonify({"code": 1, "state": game.get_state()})
 
 
 if __name__ == '__main__':
