@@ -3,7 +3,7 @@ from flask import Flask, redirect, url_for, render_template, session, request, s
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
-from Module import MPhotoInfo, MnoteInfo
+from Module import MPhotoInfo, MnoteInfo, MTravelInfo
 from Module.MTexasPoker import get_game
 from Sqls import storage
 import markdown
@@ -44,6 +44,15 @@ if not ADMIN_PASSWORD:
     ADMIN_PASSWORD = "admin@717613"
     print("[安全警告] 未设置 ADMIN_PASSWORD 环境变量，正在使用源码内置默认密码。"
           "该密码已随公开仓库泄露，请立即改用环境变量设置新密码。")
+
+# 高德地图 JS API 配置（本地 config.py 已被 gitignore，环境变量优先）
+try:
+    import config
+    AMAP_KEY      = getattr(config, "AMAP_KEY", "")
+    AMAP_SECURITY = getattr(config, "AMAP_SECURITY", "")
+except ImportError:
+    AMAP_KEY      = os.environ.get("AMAP_KEY", "")
+    AMAP_SECURITY = os.environ.get("AMAP_SECURITY", "")
 
 # ── 登录限流 / 失败锁定（进程内内存实现，适用于单 worker） ─────────────────
 _login_lock      = threading.Lock()
@@ -107,7 +116,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    return render_template('login_2.html')
+    return render_template('login.html')
 
 
 @app.route('/login_confirm', methods=['POST'])
@@ -583,6 +592,149 @@ def movie_search():
         return jsonify({"code": 1, "items": items})
     except Exception:
         return jsonify({"code": 0, "msgs": "搜索失败，请稍后再试", "items": []})
+
+
+# ── Travel ──────────────────────────────────────────────────────────────────
+
+_LNLAT_RE = re.compile(r'^\s*-?\d{1,3}(\.\d{1,6})?\s*,\s*-?\d{1,3}(\.\d{1,6})?\s*$')
+
+
+def _validate_plan(data):
+    """校验旅行计划，返回错误信息字符串；通过则返回 None。"""
+    name = (data.get("Name") or "").strip()
+    if not name:
+        return "计划名称不能为空"
+    if len(name) > 60:
+        return "计划名称过长（≤60 字）"
+    spots = data.get("Spots")
+    if not isinstance(spots, list) or len(spots) < 2:
+        return "至少需要起点和终点两个地点"
+    if len(spots) > 18:
+        return "地点数量最多 18 个"
+    for s in spots:
+        if not isinstance(s, dict):
+            return "地点数据格式错误"
+        if s.get("Type") not in MTravelInfo.SPOT_TYPES:
+            return "地点类型不合法"
+        if not (s.get("Name") or "").strip():
+            return "地点名称不能为空"
+        if not _LNLAT_RE.match(str(s.get("LngLat") or "")):
+            return "地点「%s」坐标格式错误" % s.get("Name")
+    legs = data.get("Legs")
+    if legs is not None:
+        if not isinstance(legs, list):
+            return "行程数据格式错误"
+        n = len(spots)
+        for l in legs:
+            if not isinstance(l, dict):
+                return "行程数据格式错误"
+            fi, ti = l.get("FromIndex"), l.get("ToIndex")
+            if not isinstance(fi, int) or not isinstance(ti, int) \
+                    or fi < 0 or ti >= n or ti != fi + 1:
+                return "行程索引不合法"
+    return None
+
+
+@app.route('/travel')
+def travel():
+    if not login_cat():
+        return redirect(url_for('login'))
+    records = [r for r in storage.load('travelinfo') if not r.get('IsDelete')]
+    records.sort(key=lambda r: r.get('AddTime') or '', reverse=True)
+    return render_template('travel.html', plans=records,
+                           amap_key=AMAP_KEY, amap_security=AMAP_SECURITY)
+
+
+@app.route('/travel/detail/<key_id>')
+def travel_detail(key_id):
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    for r in storage.load('travelinfo'):
+        if r.get('KeyID') == key_id and not r.get('IsDelete'):
+            return jsonify({"code": 1, "plan": r})
+    return jsonify({"code": 0, "msgs": "计划不存在"})
+
+
+@app.route('/travel/save', methods=['POST'])
+def travel_save():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"code": 0, "msgs": "请求格式错误"})
+    err = _validate_plan(data)
+    if err:
+        return jsonify({"code": 0, "msgs": err})
+
+    now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    spots = []
+    for s in data["Spots"]:
+        m = MTravelInfo.Spot()
+        m.SpotID   = s.get("SpotID") or mark_keyid()
+        m.Type     = s["Type"]
+        m.Name     = s["Name"].strip()
+        m.Address  = (s.get("Address") or "").strip()
+        m.LngLat   = s["LngLat"].strip()
+        m.Remark   = (s.get("Remark") or "").strip()
+        m.AddTime  = s.get("AddTime") or now
+        spots.append(m.__dict__)
+
+    records = storage.load('travelinfo')
+    key_id = data.get("KeyID")
+    clean_legs = []
+    for l in (data.get("Legs") or []):
+        clean_legs.append({
+            "FromIndex": l["FromIndex"],
+            "ToIndex":   l["ToIndex"],
+            "Distance":  l.get("Distance"),
+            "Duration":  l.get("Duration"),
+            "CachedAt":  str(l.get("CachedAt") or "")[:20],
+        })
+    plan = {
+        "Name":     data["Name"].strip(),
+        "Date":     (data.get("Date") or "").strip(),
+        "Note":     (data.get("Note") or "").strip(),
+        "Spots":    spots,
+        "Legs":     clean_legs,
+        "ModifyTime": now,
+    }
+    if key_id:
+        found = False
+        for r in records:
+            if r.get("KeyID") == key_id and not r.get("IsDelete"):
+                r.update(plan)
+                plan = r
+                found = True
+                break
+        if not found:
+            return jsonify({"code": 0, "msgs": "计划不存在"})
+    else:
+        plan.update({
+            "KeyID":    mark_keyid(),
+            "IsDelete": 0,
+            "AddTime":  now,
+            "AddPerson": session.get("username", "sys"),
+        })
+        records.append(plan)
+    storage.save('travelinfo', records)
+    return jsonify({"code": 1, "KeyID": plan["KeyID"]})
+
+
+@app.route('/travel/delete', methods=['POST'])
+def travel_delete():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    key_id = request.form.get('KeyID') or (request.get_json(silent=True) or {}).get('KeyID')
+    if not key_id:
+        return jsonify({"code": 0, "msgs": "缺少参数"})
+    records = storage.load('travelinfo')
+    for r in records:
+        if r.get("KeyID") == key_id:
+            r["IsDelete"] = 1
+            r["ModifyTime"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            storage.save('travelinfo', records)
+            return jsonify({"code": 1})
+    return jsonify({"code": 0, "msgs": "计划不存在"})
 
 
 # ── Game ────────────────────────────────────────────────────────────────────

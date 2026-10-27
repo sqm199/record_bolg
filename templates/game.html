@@ -27,54 +27,5 @@
 {% endblock %}
 
 {% block head %}
-<style>
-  .game-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1.25rem;
-  }
-  .game-card {
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    box-shadow: var(--shadow-sm);
-  }
-  .game-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--accent); }
-  .game-card-locked { opacity: 0.5; cursor: default; pointer-events: none; }
-  .game-cover {
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 4rem;
-    background: linear-gradient(135deg, var(--accent-soft) 0%, var(--sage-soft) 100%);
-    border-bottom: 1px solid var(--border);
-  }
-  .game-info { padding: 1rem 1.1rem; }
-  .game-info h3 {
-    margin: 0 0 0.3rem;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-  .game-info p {
-    margin: 0 0 0.5rem;
-    font-size: 0.82rem;
-    color: var(--text-muted);
-  }
-  .game-tag {
-    display: inline-block;
-    font-size: 0.72rem;
-    padding: 0.15rem 0.55rem;
-    border-radius: 12px;
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-weight: 500;
-  }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/game.css') }}">
 {% endblock %}

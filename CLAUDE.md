@@ -17,7 +17,7 @@ uv add <package-name>
 
 应用运行后访问 `http://localhost:1111`，根路由会重定向到 `/home`，未登录则跳转 `/login`。
 
-默认账号：`admin`，密码：`admin@123`（定义在 `main.py` 的 `ADMIN_ACCOUNT`/`ADMIN_PASSWORD` 常量）。
+默认账号：`admin`，密码：`admin@717613`（`ADMIN_PASSWORD` 常量兜底，优先读环境变量）。
 
 ## 数据存储
 
@@ -26,10 +26,15 @@ uv add <package-name>
 - `data/photoinfo.json` — 照片记录
 - `data/noteinfo.json` — 日志记录
 - `data/movieinfo.json` — 排行榜记录
+- `data/travelinfo.json` — 旅行计划（顶层为计划对象数组，每个计划内嵌 `Spots` 途经点与 `Legs` 分段行程缓存）
 
 存储层入口为 `Sqls/storage.py`，提供 `load(name)` / `save(name, data)` 两个函数，写操作有线程锁保护。
 
 `service/` 中的模块（`kline.py`、`run_road.py`、`req_create.py`）是独立脚本，依赖外部 MongoDB/Redis，不参与主应用运行。
+
+### 高德地图配置（旅行页）
+
+`config.py`（已 gitignore，参考 `config.py.example`）提供 `AMAP_KEY` / `AMAP_SECURITY` 两个常量，环境变量同名变量优先。`main.py` 启动时读取并注入 `travel.html`，前端在加载高德 JS API 前先设置 `window._AMapSecurityConfig.securityJsCode`。若未配置 Key，旅行页降级为无地图的纯列表提示。
 
 ## 架构概览
 
@@ -43,7 +48,7 @@ Sqls/pymysql.py  # 数据库访问层（封装 PyMySQL）
 Module/          # 数据模型类（纯 Python 数据类）
 service/         # 外部服务集成（加密货币行情、Redis/Mongo 工具）
 templates/       # Jinja2 模板（base.html 为基模板）
-static/          # 前端静态资源（jQuery、Bootstrap、Layer.js）
+static/          # 前端静态资源（dark.css 设计 token + components.css 组件 + 页面 js）
 note/            # 静态 HTML 日志文件，通过路由 /notes/<filename> 访问
 photo/           # 用户上传图片目录
 ```
@@ -70,7 +75,11 @@ storage.save('photoinfo', records)
 
 ### 模板体系
 
-`templates/base.html` 是所有页面的基模板，引入了 jQuery、Bootstrap 和 Layer.js（弹出层）。各页面模板通过 `{% block content %}` 扩展 `base.html`，通过 `value` 变量接收数据列表。
+`templates/base.html` 是所有页面的基模板（登录/解锁页用 `base_auth.html`，不含导航栏），引入自研设计系统：`static/CSS/dark.css`（token + 双主题）与 `static/CSS/components.css`（按钮/卡片/modal/toast 等组件），弹窗与轻提示由 `static/js/ui.js` 提供（`UI.modal` / `UI.toast`，无 Bootstrap/jQuery 依赖）。各页面模板通过 `{% block content %}` 扩展基模板，通过 `value` 变量接收数据列表。
+
+### 旅行计划模块
+
+路由组（`main.py` 中 `/travel` 一节）：`GET /travel` 列表/编辑页、`GET /travel/detail/<key_id>` 返回单个计划 JSON、`POST /travel/save` 整计划覆盖写（创建或更新，`_validate_plan` 校验名称、2–18 个地点、类型枚举、`"lng,lat"` 坐标与分段索引）、`POST /travel/delete` 软删。模型在 `Module/MTravelInfo.py`（`Spot`/`TravelPlan`，类型枚举 `SPOT_TYPES = start/food/hotel/sight/way/end`）。前端 `static/js/travel.js` 用高德 PlaceSearch/AutoComplete/Geocoder 选点、Driving 插件按相邻段串行算路（约 400ms 间隔规避 QPS 限制），结果写入 `Legs` 随保存落库；地点变更即整体失效重算。
 
 ### service 模块
 

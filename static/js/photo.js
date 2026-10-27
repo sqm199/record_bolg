@@ -43,7 +43,7 @@
     document.getElementById('lightboxRemark').value       = remark || '';
     document.getElementById('remarkMsg').textContent      = '';
 
-    if (!lightboxModal) lightboxModal = new bootstrap.Modal(document.getElementById('lightboxModal'));
+    if (!lightboxModal) lightboxModal = UI.modal('lightboxModal');
     lightboxModal.show();
   };
 
@@ -80,7 +80,7 @@
   // ── Delete ────────────────────────────────────────────────────────────────
   window.confirmDelete = function (keyid) {
     currentKeyID = keyid;
-    if (!deleteModal) deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    if (!deleteModal) deleteModal = UI.modal('deleteModal');
     deleteModal.show();
   };
 
@@ -102,11 +102,11 @@
           const tlEl = document.getElementById('photo-timeline');
           if (tlEl) { delete tlEl.dataset.built; tlEl.innerHTML = ''; }
         } else {
-          alert(data.msgs || '删除失败，请重试');
+          UI.toast(data.msgs || '删除失败，请重试', 'error');
         }
       })
       .catch(() => {
-        alert('网络错误，请重试');
+        UI.toast('网络错误，请重试', 'error');
       });
   });
 })();

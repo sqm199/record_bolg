@@ -11,18 +11,18 @@
   <a href="{{ url_for('note') }}" class="btn-ghost">取消</a>
 </div>
 
-<div class="card-dark" style="padding:1.5rem">
-  <div style="margin-bottom:1rem">
-    <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">标题 *</label>
+<div class="card-dark padded-card">
+  <div class="field" style="margin-bottom:1rem">
+    <label class="field-label">标题 *</label>
     <input type="text" id="noteTitle" class="form-control-dark" placeholder="请输入笔记标题">
-    <div id="titleError" style="color:var(--danger);font-size:0.8rem;min-height:1.1rem;margin-top:.25rem"></div>
+    <div id="titleError" class="form-error form-msg" style="margin-top:.25rem"></div>
   </div>
-  <div style="margin-bottom:1.25rem">
-    <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">内容</label>
+  <div class="field" style="margin-bottom:1.25rem">
+    <label class="field-label">内容</label>
     <textarea id="noteContent"></textarea>
   </div>
   <div style="margin-bottom:1.25rem">
-    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;color:var(--text-muted);font-size:0.85rem">
+    <label class="checkbox-row">
       <input type="checkbox" id="noteEncrypt" onchange="toggleEncrypt()">
       🔒 加密笔记（访问需输入密码）
     </label>
@@ -30,9 +30,9 @@
       <input type="password" id="notePassword" class="form-control-dark" placeholder="设置访问密码" autocomplete="new-password">
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:1rem">
+  <div class="row-actions">
     <button class="btn-accent" id="saveBtn" onclick="saveNote()">保存笔记</button>
-    <div id="saveMsg" style="font-size:0.82rem;min-height:1rem"></div>
+    <div id="saveMsg" class="form-msg"></div>
   </div>
 </div>
 {% endblock %}

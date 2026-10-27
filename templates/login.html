@@ -1,0 +1,81 @@
+{% extends "base_auth.html" %}
+{% block title %}羚羊之家 — 登录{% endblock %}
+
+{% block head %}
+<style>
+  .auth-wrap { background: linear-gradient(135deg, var(--bg-base) 0%, var(--bg-hover) 40%, var(--bg-base) 100%); }
+  .login-card .btn-accent { width: 100%; justify-content: center; padding: .65rem; margin-top: .5rem; font-size: .95rem; }
+  .login-footer {
+    position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%);
+    font-size: .8rem; color: var(--text-muted); text-align: center;
+  }
+  .login-footer a { color: var(--text-muted); text-decoration: none; transition: color .2s; }
+  .login-footer a:hover { color: var(--accent); }
+  .theme-toggle.login-theme { position: fixed; top: 1rem; right: 1rem; z-index: 10; background: color-mix(in srgb, var(--bg-surface) 70%, transparent); backdrop-filter: blur(6px); }
+</style>
+{% endblock %}
+
+{% block content %}
+<button id="themeToggle" class="theme-toggle login-theme" title="切换主题" aria-label="切换日间/黑夜模式">
+  <span class="theme-icon-light">🌙</span>
+  <span class="theme-icon-dark">☀️</span>
+</button>
+
+<div class="auth-card login-card">
+  <h1 class="auth-brand">🦌 羚羊之家</h1>
+  <p class="auth-sub">请登录以继续</p>
+  <form id="loginForm" novalidate>
+    <div class="field" style="margin-bottom:1rem">
+      <label class="field-label" for="useraccount">用户名</label>
+      <input type="text" id="useraccount" name="useraccount" class="form-control-dark" placeholder="Username" autocomplete="username">
+    </div>
+    <div class="field" style="margin-bottom:0.5rem">
+      <label class="field-label" for="password">密码</label>
+      <input type="password" id="password" name="password" class="form-control-dark" placeholder="Password" autocomplete="current-password">
+    </div>
+    <div class="form-error form-msg" id="errorMsg"></div>
+    <button type="submit" class="btn-accent" id="loginBtn">登录</button>
+  </form>
+</div>
+
+<footer class="login-footer">
+  <a href="https://beian.miit.gov.cn" target="_blank" rel="noopener noreferrer">蜀ICP备2026022929号 川公网安备51015602001828号</a>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    const errEl = document.getElementById('errorMsg');
+    btn.disabled = true;
+    btn.textContent = '登录中…';
+    errEl.textContent = '';
+
+    fetch('/login_confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        useraccount: document.getElementById('useraccount').value,
+        password:    document.getElementById('password').value
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.code === 1) {
+        window.location.href = '/photo';
+      } else {
+        errEl.textContent = data.msgs || '用户名或密码错误';
+        btn.disabled = false;
+        btn.textContent = '登录';
+      }
+    })
+    .catch(() => {
+      errEl.textContent = '网络错误，请重试';
+      btn.disabled = false;
+      btn.textContent = '登录';
+    });
+  });
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
 {
   "movie_domestic_2026": {
-    "ts": 1784530945,
+    "ts": 1793072267,
     "items": [
       {
         "id": "37116446",
@@ -19,9 +19,25 @@
         ]
       },
       {
+        "id": "35811064",
+        "title": "欢迎来龙餐馆",
+        "rate": "8.7",
+        "url": "https://movie.douban.com/subject/35811064/",
+        "casts": [
+          "沈腾",
+          "蒋奇明",
+          "奥马尔·谢里夫",
+          "李治廷",
+          "谢里夫·萨比"
+        ],
+        "directors": [
+          "文牧野"
+        ]
+      },
+      {
         "id": "36882191",
         "title": "八仙！",
-        "rate": "8.3",
+        "rate": "8.2",
         "url": "https://movie.douban.com/subject/36882191/",
         "casts": [
           "陈浩",
@@ -37,7 +53,7 @@
       {
         "id": "36752981",
         "title": "三国第一部：争洛阳",
-        "rate": "8.1",
+        "rate": "8.0",
         "url": "https://movie.douban.com/subject/36752981/",
         "casts": [
           "王凯",
@@ -53,7 +69,7 @@
       {
         "id": "37332784",
         "title": "我，许可",
-        "rate": "8.1",
+        "rate": "8.0",
         "url": "https://movie.douban.com/subject/37332784/",
         "casts": [
           "文淇",
@@ -69,7 +85,7 @@
       {
         "id": "37375594",
         "title": "夜王",
-        "rate": "7.8",
+        "rate": "7.7",
         "url": "https://movie.douban.com/subject/37375594/",
         "casts": [
           "黄子华",
@@ -85,7 +101,7 @@
       {
         "id": "36474027",
         "title": "镖人：风起大漠",
-        "rate": "7.5",
+        "rate": "7.4",
         "url": "https://movie.douban.com/subject/36474027/",
         "casts": [
           "吴京",
@@ -99,19 +115,19 @@
         ]
       },
       {
-        "id": "36812879",
-        "title": "抓特务",
+        "id": "35875462",
+        "title": "群星闪耀时",
         "rate": "7.4",
-        "url": "https://movie.douban.com/subject/36812879/",
+        "url": "https://movie.douban.com/subject/35875462/",
         "casts": [
-          "雷佳音",
-          "胡歌",
-          "啜妮",
-          "张瑶",
-          "林晓凡"
+          "黄渤",
+          "吴磊",
+          "高叶",
+          "孙阳",
+          "李乃文"
         ],
         "directors": [
-          "冯小刚"
+          "章笛沙"
         ]
       },
       {
@@ -131,19 +147,35 @@
         ]
       },
       {
-        "id": "36965301",
-        "title": "消失的人",
+        "id": "36812879",
+        "title": "抓特务",
         "rate": "7.2",
-        "url": "https://movie.douban.com/subject/36965301/",
+        "url": "https://movie.douban.com/subject/36812879/",
         "casts": [
-          "郑恺",
-          "刘浩存",
-          "邱泽",
-          "李晨",
-          "姜妍"
+          "雷佳音",
+          "胡歌",
+          "啜妮",
+          "张瑶",
+          "林晓凡"
         ],
         "directors": [
-          "程伟豪"
+          "冯小刚"
+        ]
+      },
+      {
+        "id": "36937765",
+        "title": "一个部门的诞生",
+        "rate": "7.2",
+        "url": "https://movie.douban.com/subject/36937765/",
+        "casts": [
+          "白只",
+          "麦沛东",
+          "梁雍婷",
+          "戴玉麒",
+          "廖子妤"
+        ],
+        "directors": [
+          "麦天枢"
         ]
       },
       {
@@ -163,9 +195,41 @@
         ]
       },
       {
+        "id": "36965301",
+        "title": "消失的人",
+        "rate": "6.9",
+        "url": "https://movie.douban.com/subject/36965301/",
+        "casts": [
+          "郑恺",
+          "刘浩存",
+          "邱泽",
+          "李晨",
+          "姜妍"
+        ],
+        "directors": [
+          "程伟豪"
+        ]
+      },
+      {
+        "id": "37247814",
+        "title": "神探之痕迹‎",
+        "rate": "6.8",
+        "url": "https://movie.douban.com/subject/37247814/",
+        "casts": [
+          "张译",
+          "马丽",
+          "陈明昊",
+          "王俊凯",
+          "范丞丞"
+        ],
+        "directors": [
+          "陈思诚"
+        ]
+      },
+      {
         "id": "36857924",
         "title": "寒战1994",
-        "rate": "7.1",
+        "rate": "6.8",
         "url": "https://movie.douban.com/subject/36857924/",
         "casts": [
           "吴彦祖",
@@ -176,73 +240,6 @@
         ],
         "directors": [
           "梁乐民"
-        ]
-      },
-      {
-        "id": "26022233",
-        "title": "蜂蜜的针",
-        "rate": "6.7",
-        "url": "https://movie.douban.com/subject/26022233/",
-        "casts": [
-          "袁泉",
-          "耿乐",
-          "宁静",
-          "俞飞鸿",
-          "齐溪"
-        ],
-        "directors": [
-          "袁梅"
-        ]
-      },
-      {
-        "id": "36452545",
-        "title": "功夫女足",
-        "rate": "6.5",
-        "url": "https://movie.douban.com/subject/36452545/",
-        "casts": [
-          "张小斐",
-          "迪丽热巴",
-          "张艺兴",
-          "刘嘉玲",
-          "佐藤健"
-        ],
-        "directors": [
-          "周星驰",
-          "秦鹏飞",
-          "林子聪",
-          "卢正雨"
-        ]
-      },
-      {
-        "id": "37427493",
-        "title": "熊出没·年年有熊",
-        "rate": "6.5",
-        "url": "https://movie.douban.com/subject/37427493/",
-        "casts": [
-          "张伟",
-          "张秉君",
-          "谭笑",
-          "王兵兵",
-          "聂吉轩"
-        ],
-        "directors": [
-          "林汇达"
-        ]
-      },
-      {
-        "id": "36372941",
-        "title": "森中有林",
-        "rate": "6.3",
-        "url": "https://movie.douban.com/subject/36372941/",
-        "casts": [
-          "于和伟",
-          "高圆圆",
-          "韩庚",
-          "张天爱",
-          "乔杉"
-        ],
-        "directors": [
-          "郑执"
         ]
       }
     ]

@@ -15,18 +15,14 @@
 
 <!-- 读模式 -->
 <div id="read-mode">
-  <div style="margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)">
-    <h1 style="font-size:1.6rem;font-weight:700;color:var(--text-primary);margin:0 0 0.6rem;line-height:1.35">
-      {{ item.Name }}
-    </h1>
-    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-      <span style="font-size:0.78rem;color:var(--text-muted)">{{ item.AddPerson }}</span>
-      <span style="color:var(--border)">·</span>
-      <span style="font-size:0.78rem;color:var(--text-muted)">{{ item.AddTime[:10] if item.AddTime else '' }}</span>
-      <span style="color:var(--border)">·</span>
-      <span style="background:var(--bg-surface);border:1px solid var(--border);padding:0.1rem 0.5rem;border-radius:10px;font-size:0.72rem;color:var(--text-muted)">
-        {{ item.ProductTypeRemark }}
-      </span>
+  <div class="note-meta-bar">
+    <h1 class="note-main-title">{{ item.Name }}</h1>
+    <div class="note-meta-row">
+      <span class="meta-item">{{ item.AddPerson }}</span>
+      <span class="dot">·</span>
+      <span class="meta-item">{{ item.AddTime[:10] if item.AddTime else '' }}</span>
+      <span class="dot">·</span>
+      <span class="badge muted">{{ item.ProductTypeRemark }}</span>
     </div>
   </div>
   <div class="note-body" id="note-body">{{ html_body | safe }}</div>
@@ -34,16 +30,16 @@
 
 <!-- 编辑模式（默认隐藏） -->
 <div id="edit-mode" style="display:none">
-  <div style="margin-bottom:0.85rem">
-    <label style="color:var(--text-muted);font-size:0.8rem;display:block;margin-bottom:.3rem">标题</label>
+  <div class="field" style="margin-bottom:0.85rem">
+    <label class="field-label">标题</label>
     <input type="text" id="edit-title" class="form-control-dark"
            style="font-size:1rem;font-weight:600" value="{{ item.Name }}">
   </div>
-  <div style="margin-bottom:0.5rem">
-    <label style="color:var(--text-muted);font-size:0.8rem;display:block;margin-bottom:.3rem">内容</label>
+  <div class="field" style="margin-bottom:0.5rem">
+    <label class="field-label">内容</label>
     <textarea id="edit-content">{% if item.get('Content') %}{{ item.get('Content') }}{% else %}{{ html_body }}{% endif %}</textarea>
   </div>
-  <div id="edit-msg" style="font-size:0.8rem;min-height:1.1rem;color:var(--danger)"></div>
+  <div id="edit-msg" class="form-error form-msg"></div>
 </div>
 {% endblock %}
 

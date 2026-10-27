@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la && cat package.json 2>/dev/null | head -60)",
+      "Bash(git status && git diff --stat HEAD | tail -20)",
+      "Bash(ls .qoder 2>/dev/null; echo \"---\"; ls \"C:/Users/Admin/.qoder\" 2>/dev/null; echo \"---\"; ls \"C:/Users/Admin/.qoder/skills\" 2>/dev/null; echo \"---\"; ls .qoder/skills 2>/dev/null)",
+      "Read(//c/Users/Admin/**)",
+      "Bash(ls; echo \"---\"; cat package.json 2>/dev/null | head -40)"
+    ]
+  }
+}

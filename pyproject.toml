@@ -16,6 +16,7 @@ dependencies = [
     "markdown>=3.10.2",
     # 生产 WSGI 服务器（Windows 部署 wsgi.py 用）
     "waitress>=3.0.0",
+    "requests>=2.34.2",
 ]
 
 [project.optional-dependencies]

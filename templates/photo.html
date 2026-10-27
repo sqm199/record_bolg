@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-header">
   <h1>照片</h1>
-  <div class="view-toggle">
+  <div class="segmented">
     <button class="view-btn" data-view="grid" onclick="switchPhotoView('grid')">⊞ 网格</button>
     <button class="view-btn active" data-view="timeline" onclick="switchPhotoView('timeline')">≡ 时间轴</button>
   </div>
@@ -51,78 +51,74 @@
 <div id="photo-timeline" class="timeline"></div>
 
 <!-- FAB -->
-<button class="fab" data-bs-toggle="modal" data-bs-target="#uploadModal" title="上传照片">＋</button>
+<button class="fab" onclick="UI.modal('uploadModal').show()" title="上传照片">＋</button>
 
 <!-- 上传 Modal -->
-<div class="modal fade" id="uploadModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">上传照片</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="uploadForm" enctype="multipart/form-data">
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:1rem">
-          <div>
-            <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">选择图片 *</label>
-            <input type="file" name="file" id="fileInput" accept="image/*" class="form-control-dark" required>
-          </div>
-          <div>
-            <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">相册分组</label>
-            <input type="text" name="group_name" class="form-control-dark" value="图片区一" placeholder="相册分组名称">
-          </div>
-          <div>
-            <label style="color:var(--text-muted);font-size:0.82rem;display:block;margin-bottom:.35rem">备注</label>
-            <textarea name="remark" class="form-control-dark" rows="2" placeholder="选填备注"></textarea>
-          </div>
-          <div id="uploadError" style="color:var(--danger);font-size:0.82rem;display:none"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-ghost" data-bs-dismiss="modal">取消</button>
-          <button type="submit" class="btn-accent" id="uploadBtn">上传</button>
-        </div>
-      </form>
+<div class="app-modal" id="uploadModal">
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-card">
+    <div class="app-modal-header">
+      <h5 class="app-modal-title">上传照片</h5>
+      <button type="button" class="app-modal-close" data-modal-dismiss>&times;</button>
     </div>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="app-modal-body col-gap">
+        <div class="field">
+          <label class="field-label">选择图片 *</label>
+          <input type="file" name="file" id="fileInput" accept="image/*" class="form-control-dark" required>
+        </div>
+        <div class="field">
+          <label class="field-label">相册分组</label>
+          <input type="text" name="group_name" class="form-control-dark" value="图片区一" placeholder="相册分组名称">
+        </div>
+        <div class="field">
+          <label class="field-label">备注</label>
+          <textarea name="remark" class="form-control-dark" rows="2" placeholder="选填备注"></textarea>
+        </div>
+        <div id="uploadError" class="form-error" style="display:none"></div>
+      </div>
+      <div class="app-modal-footer">
+        <button type="button" class="btn-ghost" data-modal-dismiss>取消</button>
+        <button type="submit" class="btn-accent" id="uploadBtn">上传</button>
+      </div>
+    </form>
   </div>
 </div>
 
 <!-- 大图 Modal -->
-<div class="modal fade" id="lightboxModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="lightboxTitle"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="app-modal" id="lightboxModal">
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-card wide">
+    <div class="app-modal-header">
+      <h5 class="app-modal-title" id="lightboxTitle"></h5>
+      <button type="button" class="app-modal-close" data-modal-dismiss>&times;</button>
+    </div>
+    <div class="app-modal-body lightbox-layout">
+      <div class="lightbox-img-wrap">
+        <img id="lightboxImg" src="" alt="">
       </div>
-      <div class="modal-body" style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <img id="lightboxImg" src="" alt=""
-               style="width:100%;max-height:80vh;object-fit:contain;border-radius:6px;background:#12141e">
-        </div>
-        <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:.75rem">
-          <label style="color:var(--text-muted);font-size:0.82rem">备注</label>
-          <textarea id="lightboxRemark" class="form-control-dark" rows="5"></textarea>
-          <button class="btn-accent" onclick="saveRemark()">保存备注</button>
-          <div id="remarkMsg" style="font-size:0.82rem;min-height:1rem"></div>
-        </div>
+      <div class="lightbox-side">
+        <label class="field-label">备注</label>
+        <textarea id="lightboxRemark" class="form-control-dark" rows="5"></textarea>
+        <button class="btn-accent" onclick="saveRemark()">保存备注</button>
+        <div id="remarkMsg" class="form-msg"></div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- 删除确认 Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:360px">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">确认删除</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" style="color:var(--text-muted)">删除后无法恢复，确认继续？</div>
-      <div class="modal-footer">
-        <button type="button" class="btn-ghost" data-bs-dismiss="modal">取消</button>
-        <button type="button" class="btn-danger" id="confirmDeleteBtn">删除</button>
-      </div>
+<div class="app-modal" id="deleteModal">
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-card narrow">
+    <div class="app-modal-header">
+      <h5 class="app-modal-title">确认删除</h5>
+      <button type="button" class="app-modal-close" data-modal-dismiss>&times;</button>
+    </div>
+    <div class="app-modal-body" style="color:var(--text-muted)">删除后无法恢复，确认继续？</div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn-ghost" data-modal-dismiss>取消</button>
+      <button type="button" class="btn-danger" id="confirmDeleteBtn">删除</button>
     </div>
   </div>
 </div>
