@@ -7,9 +7,9 @@
 
 {% block content %}
 <div class="page-header">
-  <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem">← 返回笔记列表</a>
+  <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem"><svg class="icon"><use href="#i-arrow-left"/></svg>返回笔记列表</a>
   <div id="header-btns">
-    <button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)">✏️ 编辑</button>
+    <button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)"><svg class="icon"><use href="#i-pencil"/></svg>编辑</button>
   </div>
 </div>
 
@@ -74,7 +74,7 @@
     document.getElementById('edit-mode').style.display = 'none';
     document.getElementById('read-mode').style.display = 'block';
     document.getElementById('header-btns').innerHTML =
-      '<button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)">✏️ 编辑</button>';
+      '<button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)"><svg class="icon"><use href="#i-pencil"/></svg>编辑</button>';
   }
 
   function saveEdit() {

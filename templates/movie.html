@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>🎬 电影榜单</h1>
+  <h1><svg class="icon"><use href="#i-film"/></svg>电影榜单</h1>
 </div>
 
 <div class="movie-layout">
@@ -21,7 +21,7 @@
     <div id="searchSection" class="search-section" style="display:none">
       <div class="section-head">
         <span id="searchTitle">搜索结果</span>
-        <button class="btn-ghost" onclick="closeSearch()">← 返回榜单</button>
+        <button class="btn-ghost" onclick="closeSearch()"><svg class="icon"><use href="#i-arrow-left"/></svg>返回榜单</button>
       </div>
       <div id="searchList" class="rank-list"></div>
     </div>

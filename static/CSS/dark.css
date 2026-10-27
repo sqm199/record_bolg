@@ -2,30 +2,39 @@
    设计系统 · 外壳层
    token 定义 + 全局重置 + 导航 + 双主题覆盖
    组件样式见 components.css
+   主题意象：宣纸留白 · 松绿远山 · 蜜金微光（温馨小清新，衬线定格调）
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── CSS Variables（温馨小清新）── */
+/* ── CSS Variables ── */
 :root {
-  --bg-base:      #fdf8f0;
-  --bg-surface:   #ffffff;
-  --bg-hover:     #f9f2e8;
-  --border:       #e8ddd0;
-  --accent:       #c4907c;
-  --accent-hover: #b07a66;
-  --accent-soft:  #f2e4dc;
-  --sage:         #8bab91;
-  --sage-soft:    #e8f0ea;
-  --text-primary: #3d362d;
-  --text-muted:   #9a8e7d;
-  --success:      #7ab88a;
-  --danger:       #d4786e;
-  --bg-nav:       rgba(255,249,242,0.85);
-  --bg-input:     #faf6ef;
-  --placeholder:  #c5b9a8;
-  --shadow-sm:    0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-md:    0 4px 16px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.03);
-  --radius-sm:    8px;
-  --radius-md:    12px;
+  /* 品牌衬线：仅用于标题/品牌/大数字，正文保持无衬线保证可读 */
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Georgia", "STZhongsong", "SimSun", serif;
+  --font-body: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+
+  /* 色板 · 日间（宣纸白，绿灰调） */
+  --bg-base:      #f5f6f1;
+  --bg-surface:   #fdfdfb;
+  --bg-hover:     #eef0e8;
+  --border:       #dfe2d6;
+  --accent:       #4c6b58;         /* 松绿 */
+  --accent-hover: #3d5747;
+  --accent-soft:  #e3ece4;
+  --honey:        #a87b35;         /* 蜜金，只给评分/高光 */
+  --honey-soft:   #f6ecd9;
+  --sage:         #7d9b84;
+  --sage-soft:    #e9f0e9;
+  --text-primary: #2f3630;
+  --text-muted:   #77817a;
+  --success:      #56865f;
+  --danger:       #b7574c;
+  --bg-nav:       rgba(245,246,241,0.96);
+  --bg-input:     #f8f9f4;
+  --placeholder:  #b4bbb0;
+  --shadow-sm:    0 1px 2px rgba(47,54,48,.05), 0 1px 6px rgba(47,54,48,.04);
+  --shadow-md:    0 2px 6px rgba(47,54,48,.06), 0 10px 28px rgba(47,54,48,.09);
+  --shadow-lg:    0 6px 16px rgba(47,54,48,.10), 0 22px 48px rgba(47,54,48,.13);
+  --radius-sm:    6px;
+  --radius-md:    10px;
   --radius-lg:    16px;
 
   /* 间距刻度 */
@@ -36,15 +45,16 @@
   --space-5: 2.5rem;
 
   /* 字号刻度 */
-  --fs-xs:   .72rem;
-  --fs-sm:   .82rem;
+  --fs-xs:   .75rem;
+  --fs-sm:   .84rem;
   --fs-base: .95rem;
-  --fs-lg:   1.05rem;
-  --fs-xl:   1.25rem;
-  --fs-2xl:  1.6rem;
+  --fs-lg:   1.08rem;
+  --fs-xl:   1.3rem;
+  --fs-2xl:  1.75rem;
 
   /* 动效 */
   --ease:      cubic-bezier(.4,0,.2,1);
+  --ease-out:  cubic-bezier(.16,.84,.44,1);
   --dur-fast:  .15s;
   --dur:       .25s;
 
@@ -55,8 +65,8 @@
 
   /* 旅行途经点语义色 */
   --spot-start: var(--accent);
-  --spot-food:  #d9a94a;
-  --spot-hotel: #7c8fd4;
+  --spot-food:  #c2882f;
+  --spot-hotel: #6f83ab;
   --spot-sight: var(--sage);
   --spot-end:   var(--danger);
 }
@@ -66,36 +76,62 @@
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
-  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  font-family: var(--font-body);
   margin: 0;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* ── Navbar ── */
+::selection { background: var(--accent-soft); color: var(--accent-hover); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* SVG 图标（配合 icons.svg sprite） */
+.icon {
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  vertical-align: -0.125em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* ── Navbar（实底、发丝分界、衬线品牌字） ── */
 .app-nav {
   background: var(--bg-nav);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   padding: 0 1.5rem;
   display: flex;
   align-items: center;
-  height: 56px;
+  height: 60px;
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
   gap: 0.5rem;
 }
 .app-nav .brand {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
   color: var(--text-primary);
   text-decoration: none;
-  margin-right: 1.5rem;
+  margin-right: 1.75rem;
   white-space: nowrap;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
 }
+.app-nav .brand .icon { font-size: 1.25rem; color: var(--accent); }
 .nav-links {
   display: flex;
   gap: 0.25rem;
@@ -104,11 +140,11 @@ body {
 .nav-links .nav-link {
   color: var(--text-muted);
   text-decoration: none;
-  padding: 0.4rem 0.75rem;
+  padding: 0.45rem 0.8rem;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  position: relative;
+  transition: color 0.2s, background 0.2s;
 }
 .nav-links .nav-link:hover {
   color: var(--accent);
@@ -116,8 +152,17 @@ body {
 }
 .nav-links .nav-link.active {
   color: var(--accent);
-  border-bottom-color: var(--accent);
-  font-weight: 500;
+  font-weight: 600;
+}
+.nav-links .nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: 0.8rem;
+  right: 0.8rem;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--honey);
 }
 .nav-right {
   display: flex;
@@ -134,18 +179,22 @@ body {
   background: none;
   border: 1px solid var(--border);
   color: var(--text-muted);
-  padding: 0.3rem 0.6rem;
+  padding: 0.35rem 0.6rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 @media (max-width: 640px) {
   .nav-toggle { display: flex; }
+  .app-nav { padding: 0 1rem; }
+  .app-nav .brand { margin-right: .75rem; }
+  .nav-username { display: none; }
+  .nav-right .btn-ghost { white-space: nowrap; }
   .nav-links {
     display: none;
     flex-direction: column;
     position: absolute;
-    top: 56px;
+    top: 60px;
     left: 0;
     right: 0;
     background: var(--bg-surface);
@@ -162,56 +211,77 @@ body {
   background: none;
   border: 1px solid var(--border);
   border-radius: 50%;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1;
   padding: 0;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  color: var(--text-muted);
+  transition: color var(--dur), border-color var(--dur), background var(--dur);
   flex-shrink: 0;
 }
 .theme-toggle:hover {
+  color: var(--accent);
   background: var(--accent-soft);
   border-color: var(--accent);
-  transform: rotate(15deg);
 }
-/* 浅色模式隐藏太阳，黑夜模式隐藏月亮 */
+/* 浅色模式显示月亮（点击切到夜），黑夜模式显示太阳 */
 .theme-toggle .theme-icon-dark { display: none; }
 html[data-theme="dark"] .theme-toggle .theme-icon-light { display: none; }
-html[data-theme="dark"] .theme-toggle .theme-icon-dark { display: inline; }
+html[data-theme="dark"] .theme-toggle .theme-icon-dark { display: inline-block; }
 
 /* ── spot 语义色夜间微调 ── */
 html[data-theme="dark"] {
-  --spot-food:  #e0b558;
-  --spot-hotel: #8fa1e0;
+  --spot-food:  #d19a44;
+  --spot-hotel: #8ba0c9;
+}
+
+/* ── 进场动效工具（js 添加 .reveal 后逐段浮现） ── */
+html.js-ready .reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .5s var(--ease-out), transform .5s var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+html.js-ready .reveal.revealed {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js-ready .reveal { opacity: 1; transform: none; transition: none; }
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   Dark Theme Overrides（仅 token 值 + 无法用 color-mix 自适应的个别覆盖）
+   Dark Theme Overrides（暖墨色，绿灰调，与日间同一意象）
    ══════════════════════════════════════════════════════════════════ */
 html[data-theme="dark"] {
-  --bg-base:      #1b1d24;
-  --bg-surface:   #23252e;
-  --bg-hover:     #2a2d38;
-  --border:       #353845;
-  --accent:       #c4a088;
-  --accent-hover: #b08868;
-  --accent-soft:  #312820;
+  --bg-base:      #181c19;
+  --bg-surface:   #1f2421;
+  --bg-hover:     #272d29;
+  --border:       #333b35;
+  --accent:       #91b59d;
+  --accent-hover: #a5c5b0;
+  --accent-soft:  #26332b;
+  --honey:        #d2a95e;
+  --honey-soft:   #342c1c;
   --sage:         #8bab91;
-  --sage-soft:    #1e2a22;
-  --text-primary: #ddd8d0;
-  --text-muted:   #8a8580;
-  --success:      #6aaa78;
-  --danger:       #d48076;
-  --bg-nav:       rgba(27,29,36,0.92);
-  --bg-input:     #1e2028;
-  --placeholder:  #5e5a54;
-  --shadow-sm:    0 1px 3px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.15);
-  --shadow-md:    0 4px 16px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.15);
+  --sage-soft:    #222c25;
+  --text-primary: #e2e6df;
+  --text-muted:   #97a299;
+  --success:      #7fae88;
+  --danger:       #d6867c;
+  --bg-nav:       rgba(24,28,25,0.97);
+  --bg-input:     #1b201d;
+  --placeholder:  #5c665f;
+  --shadow-sm:    0 1px 2px rgba(0,0,0,.2), 0 1px 6px rgba(0,0,0,.12);
+  --shadow-md:    0 2px 6px rgba(0,0,0,.22), 0 10px 28px rgba(0,0,0,.28);
+  --shadow-lg:    0 6px 16px rgba(0,0,0,.3), 0 22px 48px rgba(0,0,0,.36);
 }
 
 html[data-theme="dark"] body {

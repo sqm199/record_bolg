@@ -3,27 +3,37 @@
 
 {% block head %}
 <style>
-  .auth-wrap { background: linear-gradient(135deg, var(--bg-base) 0%, var(--bg-hover) 40%, var(--bg-base) 100%); }
-  .login-card .btn-accent { width: 100%; justify-content: center; padding: .65rem; margin-top: .5rem; font-size: .95rem; }
+  .auth-wrap { background: var(--bg-base); position: relative; overflow: hidden; }
+  /* 远处一座低饱和的山影，呼应首页的松绿意象 */
+  .auth-wrap::before {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0; height: 34vh;
+    background:
+      radial-gradient(120% 100% at 20% 100%, var(--sage-soft) 40%, transparent 70%),
+      radial-gradient(120% 100% at 80% 100%, var(--accent-soft) 35%, transparent 70%);
+    pointer-events: none;
+  }
+  .login-card { position: relative; }
+  .login-card .btn-accent { width: 100%; justify-content: center; padding: .7rem; margin-top: .75rem; font-size: .95rem; }
   .login-footer {
     position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%);
-    font-size: .8rem; color: var(--text-muted); text-align: center;
+    font-size: .78rem; color: var(--text-muted); text-align: center; z-index: 1;
   }
   .login-footer a { color: var(--text-muted); text-decoration: none; transition: color .2s; }
   .login-footer a:hover { color: var(--accent); }
-  .theme-toggle.login-theme { position: fixed; top: 1rem; right: 1rem; z-index: 10; background: color-mix(in srgb, var(--bg-surface) 70%, transparent); backdrop-filter: blur(6px); }
+  .theme-toggle.login-theme { position: fixed; top: 1rem; right: 1rem; z-index: 10; background: var(--bg-surface); }
 </style>
 {% endblock %}
 
 {% block content %}
 <button id="themeToggle" class="theme-toggle login-theme" title="切换主题" aria-label="切换日间/黑夜模式">
-  <span class="theme-icon-light">🌙</span>
-  <span class="theme-icon-dark">☀️</span>
+  <span class="theme-icon-light"><svg class="icon"><use href="#i-moon"/></svg></span>
+  <span class="theme-icon-dark"><svg class="icon"><use href="#i-sun"/></svg></span>
 </button>
 
 <div class="auth-card login-card">
-  <h1 class="auth-brand">🦌 羚羊之家</h1>
-  <p class="auth-sub">请登录以继续</p>
+  <h1 class="auth-brand"><svg class="icon"><use href="#i-deer"/></svg>羚羊之家</h1>
+  <p class="auth-sub">家的小站 · 照片、笔记与远行</p>
   <form id="loginForm" novalidate>
     <div class="field" style="margin-bottom:1rem">
       <label class="field-label" for="useraccount">用户名</label>

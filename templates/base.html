@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}羚羊之家{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='CSS/dark.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='CSS/components.css') }}">
   {% block head %}{% endblock %}
@@ -11,28 +14,28 @@
 <body>
 
 <nav class="app-nav" id="appNav">
-  <a class="brand" href="/">🦌 羚羊之家</a>
+  <a class="brand" href="/"><svg class="icon"><use href="#i-deer"/></svg>羚羊之家</a>
   <div class="nav-links" id="navLinks">
     <a class="nav-link {% if request.endpoint == 'photo' %}active{% endif %}"
-       href="{{ url_for('photo') }}">Photo</a>
+       href="{{ url_for('photo') }}">相册</a>
     <a class="nav-link {% if request.endpoint in ('note', 'note_new', 'cat_notes_file') %}active{% endif %}"
-       href="{{ url_for('note') }}">Note</a>
+       href="{{ url_for('note') }}">笔记</a>
     <a class="nav-link {% if request.endpoint == 'movie' %}active{% endif %}"
-       href="{{ url_for('movie') }}">Movie</a>
+       href="{{ url_for('movie') }}">影单</a>
     <a class="nav-link {% if request.endpoint == 'travel' %}active{% endif %}"
-       href="{{ url_for('travel') }}">Travel</a>
+       href="{{ url_for('travel') }}">旅行</a>
     <a class="nav-link {% if request.endpoint in ('game_index', 'game_texas') %}active{% endif %}"
-       href="{{ url_for('game_index') }}">Game</a>
+       href="{{ url_for('game_index') }}">游戏</a>
   </div>
   <div class="nav-right">
     <button id="themeToggle" class="theme-toggle" title="切换日间/黑夜模式" aria-label="切换主题">
-      <span class="theme-icon-light">🌙</span>
-      <span class="theme-icon-dark">☀️</span>
+      <span class="theme-icon-light"><svg class="icon"><use href="#i-moon"/></svg></span>
+      <span class="theme-icon-dark"><svg class="icon"><use href="#i-sun"/></svg></span>
     </button>
     <span class="nav-username">{{ session.get('username', '') }}</span>
     <a href="{{ url_for('logout') }}" class="btn-ghost">退出</a>
   </div>
-  <button class="nav-toggle" onclick="document.getElementById('appNav').classList.toggle('open')" aria-label="菜单">☰</button>
+  <button class="nav-toggle" onclick="document.getElementById('appNav').classList.toggle('open')" aria-label="菜单"><svg class="icon"><use href="#i-menu"/></svg></button>
 </nav>
 
 <div class="page-body">
@@ -40,6 +43,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/icons.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>

@@ -9,8 +9,8 @@
 <!-- 计划列表 -->
 <div id="planListView">
   <div class="page-header">
-    <h1>🧭 旅行计划</h1>
-    <button class="btn-accent" onclick="Travel.newPlan()">＋ 新建计划</button>
+    <h1><svg class="icon"><use href="#i-map"/></svg>旅行计划</h1>
+    <button class="btn-accent" onclick="Travel.newPlan()"><svg class="icon"><use href="#i-plus"/></svg>新建计划</button>
   </div>
   {% if plans %}
   <div class="plan-grid">
@@ -19,26 +19,26 @@
       <div class="plan-card-body" onclick="Travel.openPlan('{{ p.KeyID }}')">
         <div class="plan-card-title">{{ p.Name }}</div>
         <div class="plan-card-meta">
-          {% if p.Date %}<span>📅 {{ p.Date }}</span>{% endif %}
-          <span>📍 {{ p.Spots | length }} 个地点</span>
+          {% if p.Date %}<span><svg class="icon"><use href="#i-calendar"/></svg>{{ p.Date }}</span>{% endif %}
+          <span><svg class="icon"><use href="#i-pin"/></svg>{{ p.Spots | length }} 个地点</span>
           {% set legs = p.get('Legs') or [] %}
           {% if legs %}
-            <span>🚗 {% set ns = namespace(km=0) %}{% for l in legs if l.get('Distance') %}{% set ns.km = ns.km + l.Distance %}{% endfor %}全程约 {{ '%.1f' | format(ns.km / 1000) }} km</span>
+            <span><svg class="icon"><use href="#i-car"/></svg>{% set ns = namespace(km=0) %}{% for l in legs if l.get('Distance') %}{% set ns.km = ns.km + l.Distance %}{% endfor %}全程约 {{ '%.1f' | format(ns.km / 1000) }} km</span>
           {% endif %}
         </div>
         {% if p.Note %}<div class="plan-card-note">{{ p.Note }}</div>{% endif %}
       </div>
       <div class="plan-card-actions">
-        <button class="icon-btn" title="编辑" onclick="event.stopPropagation(); Travel.openPlan('{{ p.KeyID }}')">✏️</button>
-        <button class="icon-btn danger" title="删除" onclick="event.stopPropagation(); Travel.askDelete('{{ p.KeyID }}')">🗑️</button>
+        <button class="icon-btn" title="编辑" aria-label="编辑计划" onclick="event.stopPropagation(); Travel.openPlan('{{ p.KeyID }}')"><svg class="icon"><use href="#i-pencil"/></svg></button>
+        <button class="icon-btn danger" title="删除" aria-label="删除计划" onclick="event.stopPropagation(); Travel.askDelete('{{ p.KeyID }}')"><svg class="icon"><use href="#i-trash"/></svg></button>
       </div>
     </div>
     {% endfor %}
   </div>
   {% else %}
   <div class="empty-state">
-    <div class="empty-icon">🗺️</div>
-    <div>还没有旅行计划，点击右上角新建</div>
+    <div class="empty-icon"><svg class="icon"><use href="#i-map"/></svg></div>
+    <div>还没有旅行计划，点「新建计划」安排第一程</div>
   </div>
   {% endif %}
 </div>
@@ -46,10 +46,10 @@
 <!-- 计划编辑 -->
 <div id="planEditView" style="display:none">
   <div class="page-header">
-    <button class="btn-ghost" onclick="Travel.backToList()">← 返回列表</button>
+    <button class="btn-ghost" onclick="Travel.backToList()"><svg class="icon"><use href="#i-arrow-left"/></svg>返回列表</button>
     <h1 id="editorTitle">新建计划</h1>
     <div class="row-actions">
-      <button class="btn-ghost" id="recomputeBtn" onclick="Travel.recompute()">🔄 重新计算路线</button>
+      <button class="btn-ghost" id="recomputeBtn" onclick="Travel.recompute()"><svg class="icon"><use href="#i-refresh"/></svg>重新计算路线</button>
       <button class="btn-accent" id="savePlanBtn" onclick="Travel.savePlan()">保存计划</button>
     </div>
   </div>
@@ -76,8 +76,8 @@
       <div class="section-head">
         <span>行程地点</span>
         <div class="row-actions">
-          <button class="btn-ghost" onclick="Travel.locateMe()" title="用当前定位作为出发点">📡 我的位置</button>
-          <button class="btn-ghost" onclick="Travel.addSpot()">＋ 添加地点</button>
+          <button class="btn-ghost" onclick="Travel.locateMe()" title="用当前定位作为出发点"><svg class="icon"><use href="#i-satellite"/></svg>我的位置</button>
+          <button class="btn-ghost" onclick="Travel.addSpot()"><svg class="icon"><use href="#i-plus"/></svg>添加地点</button>
         </div>
       </div>
       <div id="spotList" class="spot-list"></div>
@@ -95,7 +95,7 @@
   </div>
   {% else %}
   <div class="empty-state">
-    <div class="empty-icon">🗺️</div>
+    <div class="empty-icon"><svg class="icon"><use href="#i-map"/></svg></div>
     <div>地图功能未配置：请在 <code>config.py</code> 或环境变量中设置 AMAP_KEY / AMAP_SECURITY</div>
   </div>
   {% endif %}

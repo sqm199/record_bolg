@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}🔒 {{ item.Name }} — 羚羊之家{% endblock %}
+{% block title %}{{ item.Name }} — 羚羊之家{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem">← 返回笔记列表</a>
+  <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem"><svg class="icon"><use href="#i-arrow-left"/></svg>返回笔记列表</a>
 </div>
 
 <div class="auth-card" style="margin:3rem auto">
-  <div class="lock-icon">🔒</div>
+  <div class="lock-icon"><svg class="icon"><use href="#i-lock"/></svg></div>
   <h2 class="lock-title">{{ item.Name }}</h2>
   <p class="lock-desc">这是一篇加密笔记，请输入密码访问</p>
   <input type="password" id="unlockPassword" class="form-control-dark"

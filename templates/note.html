@@ -3,13 +3,13 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>笔记</h1>
+  <h1><svg class="icon"><use href="#i-note"/></svg>笔记</h1>
   <div style="display:flex;align-items:center;gap:0.5rem">
     <div class="segmented">
-      <button class="view-btn" data-view="list" onclick="switchNoteView('list')">≡ 列表</button>
-      <button class="view-btn active" data-view="timeline" onclick="switchNoteView('timeline')">○ 时间轴</button>
+      <button class="view-btn" data-view="list" onclick="switchNoteView('list')"><svg class="icon"><use href="#i-list"/></svg>列表</button>
+      <button class="view-btn active" data-view="timeline" onclick="switchNoteView('timeline')"><svg class="icon"><use href="#i-timeline"/></svg>时间轴</button>
     </div>
-    <a href="{{ url_for('note_new') }}" class="btn-accent">＋ 新建笔记</a>
+    <a href="{{ url_for('note_new') }}" class="btn-accent"><svg class="icon"><use href="#i-plus"/></svg>新建笔记</a>
   </div>
 </div>
 
@@ -19,19 +19,19 @@
 <div class="note-list">
   {% for item in value %}
   <div class="note-card" id="note-{{ item.KeyID }}">
-    <div class="note-title">{% if item.IsEncrypted %}🔒 {% endif %}{{ item.Name }}</div>
+    <div class="note-title">{% if item.IsEncrypted %}<svg class="icon" title="加密"><use href="#i-lock"/></svg>{% endif %}{{ item.Name }}</div>
     <span class="note-meta">{{ item.AddPerson }} · {{ item.AddTime[:10] if item.AddTime else '' }}</span>
     <a href="{{ url_for('cat_notes_file', filename=item.Path) }}"
        class="btn-ghost" style="font-size:0.82rem">查看</a>
-    <button class="note-delete" title="删除"
-            onclick="confirmNoteDelete('{{ item.KeyID }}')">×</button>
+    <button class="note-delete" title="删除" aria-label="删除笔记"
+            onclick="confirmNoteDelete('{{ item.KeyID }}')"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   {% endfor %}
 </div>
 {% else %}
 <div class="empty-state">
-  <div class="empty-icon">📝</div>
-  <div>还没有笔记，点击右上角新建</div>
+  <div class="empty-icon"><svg class="icon"><use href="#i-note"/></svg></div>
+  <div>还没有笔记，点「新建笔记」写第一篇</div>
 </div>
 {% endif %}
 </div>
@@ -106,7 +106,7 @@
 
     if (sorted.length === 0) {
       container.innerHTML =
-        '<div class="empty-state"><div class="empty-icon">📝</div><div>还没有笔记</div></div>';
+        '<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#i-note"/></svg></div><div>还没有笔记</div></div>';
       return;
     }
 
@@ -133,28 +133,28 @@
       itemEl.id = 'tl-note-' + item.KeyID;
       itemEl.innerHTML =
         '<div class="timeline-spine">' +
+          '<div class="timeline-date"><span class="tl-day">' + day + '</span> ' + month + '月</div>' +
           '<div class="timeline-dot green"></div>' +
           (isLast ? '' : '<div class="timeline-line green"></div>') +
         '</div>' +
         '<div class="timeline-body">' +
-          '<div class="timeline-date">' + month + '月 ' + day + '日</div>' +
           '<div class="timeline-card">' +
-            '<div class="timeline-card-title">' + (item.IsEncrypted ? '🔒 ' : '') + escHtml(item.Name) + '</div>' +
+            '<div class="timeline-card-title">' + (item.IsEncrypted ? '<svg class="icon"><use href="#i-lock"/></svg>' : '') + escHtml(item.Name) + '</div>' +
             '<div class="timeline-card-meta">' +
               '<span>' + escHtml(item.AddPerson || '') + '</span>' +
               '<span>·</span>' +
               '<span>' + escHtml(item.ProductTypeRemark || '') + '</span>' +
-              '<a href="/notes/' + encodeURIComponent(item.Path) + '" ' +
-                 'style="margin-left:auto;color:var(--accent);font-size:0.72rem;text-decoration:none">' +
-                 '查看 →</a>' +
-              '<button style="background:none;border:none;color:var(--text-muted);cursor:pointer;' +
-                       'font-size:1rem;padding:0;line-height:1" ' +
-                       'onclick="confirmNoteDelete(\'' + escHtml(item.KeyID) + '\')" title="删除">×</button>' +
+              '<a class="tl-view-link" href="/notes/' + encodeURIComponent(item.Path) + '">查看' +
+                 '<svg class="icon"><use href="#i-arrow-right"/></svg></a>' +
+              '<button class="tl-del" onclick="confirmNoteDelete(\'' + escHtml(item.KeyID) + '\')" title="删除" aria-label="删除">' +
+                 '<svg class="icon"><use href="#i-trash"/></svg></button>' +
             '</div>' +
           '</div>' +
         '</div>';
       container.appendChild(itemEl);
     });
+    if (window.UI_revealStagger)
+      UI_revealStagger(container.querySelectorAll('.timeline-item'));
   }
 
   function switchNoteView(view) {

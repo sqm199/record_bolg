@@ -15,19 +15,22 @@
   transition: border-color var(--dur), transform var(--dur), box-shadow var(--dur);
   box-shadow: var(--shadow-sm);
 }
-.plan-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow-md); }
-.plan-card-body { padding: 1.1rem 1.25rem; }
+.plan-card:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.plan-card-body { padding: 1.15rem 1.3rem; }
 .plan-card-title {
-  font-size: 1rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: .45rem;
+  margin-bottom: .55rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .plan-card-meta {
-  display: flex; gap: .75rem; flex-wrap: wrap;
+  display: flex; gap: .85rem; flex-wrap: wrap;
   font-size: var(--fs-xs); color: var(--text-muted);
 }
+.plan-card-meta span { display: inline-flex; align-items: center; gap: .3rem; }
+.plan-card-meta .icon { color: var(--sage); font-size: .85rem; }
 .plan-card-note {
   margin-top: .5rem;
   font-size: var(--fs-xs);
@@ -80,14 +83,15 @@
 .spot-item.located { border-left: 3px solid var(--spot-accent, var(--accent)); }
 .spot-order {
   flex: 0 0 auto;
-  width: 22px; height: 22px;
+  width: 26px; height: 26px;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent-hover);
-  font-size: .7rem; font-weight: 700;
+  color: var(--accent);
+  font-size: .8rem;
   display: flex; align-items: center; justify-content: center;
-  margin-top: .35rem;
+  margin-top: .3rem;
 }
+.spot-order .icon { font-size: .85rem; }
 .spot-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .35rem; }
 .spot-row1 { display: flex; gap: .4rem; align-items: center; }
 .spot-type-select {
@@ -176,9 +180,10 @@
 .leg-item.failed  .leg-stat { color: var(--danger); }
 .leg-badge {
   flex: 0 0 auto;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--accent-soft); color: var(--accent-hover);
-  font-size: .65rem; font-weight: 700;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-family: var(--font-display);
+  font-size: .72rem; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
 .calc-status { font-size: .75rem; color: var(--text-muted); margin-top: .6rem; min-height: 1rem; }

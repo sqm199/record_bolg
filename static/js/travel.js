@@ -3,13 +3,16 @@ window.Travel = (function () {
   'use strict';
 
   var SPOT_TYPES = {
-    start: { label: '出发点',  icon: '🚩', color: '#c4907c' },
-    food:  { label: '吃饭',    icon: '🍚', color: '#d9a94a' },
-    hotel: { label: '住宿',    icon: '🛏', color: '#7c8fd4' },
-    sight: { label: '游玩点',  icon: '🏞', color: '#8bab91' },
-    way:   { label: '途经点',  icon: '📍', color: '#9a8e7d' },
-    end:   { label: '终点',    icon: '🏁', color: '#d4786e' }
+    start: { label: '出发点',  icon: 'i-flag',      color: '#4c6b58' },
+    food:  { label: '吃饭',    icon: 'i-cutlery',   color: '#c2882f' },
+    hotel: { label: '住宿',    icon: 'i-bed',       color: '#6f83ab' },
+    sight: { label: '游玩点',  icon: 'i-leaf',      color: '#7d9b84' },
+    way:   { label: '途经点',  icon: 'i-pin',       color: '#77817a' },
+    end:   { label: '终点',    icon: 'i-finish',    color: '#b7574c' }
   };
+  function svgIcon(id) {
+    return '<svg class="icon"><use href="#' + id + '"/></svg>';
+  }
 
   var plans    = (typeof TRAVEL_PLANS !== 'undefined' && TRAVEL_PLANS) || [];
   var plan     = null;      // 正在编辑的计划
@@ -132,6 +135,9 @@ window.Travel = (function () {
     var found = null;
     plans.forEach(function (p) { if (p.KeyID === keyid) found = p; });
     if (!found) return;
+    if (location.hash !== '#plan-' + keyid) {
+      history.replaceState(null, '', '#plan-' + keyid);
+    }
     plan = JSON.parse(JSON.stringify(found));
     showEdit();
     fillMeta();
@@ -160,7 +166,7 @@ window.Travel = (function () {
   function typeOptions(t) {
     return Object.keys(SPOT_TYPES).map(function (k) {
       return '<option value="' + k + '"' + (k === t ? ' selected' : '') + '>' +
-             SPOT_TYPES[k].icon + ' ' + SPOT_TYPES[k].label + '</option>';
+             SPOT_TYPES[k].label + '</option>';
     }).join('');
   }
 
@@ -172,7 +178,7 @@ window.Travel = (function () {
       el.className = 'spot-item' + (s.LngLat ? ' located' : '');
       el.dataset.type = s.Type;
       el.innerHTML =
-        '<div class="spot-order">' + (i + 1) + '</div>' +
+        '<div class="spot-order">' + svgIcon((SPOT_TYPES[s.Type] || SPOT_TYPES.way).icon) + '</div>' +
         '<div class="spot-body">' +
           '<div class="spot-row1">' +
             '<select class="spot-type-select" data-i="' + i + '" data-act="type">' + typeOptions(s.Type) + '</select>' +
@@ -180,15 +186,15 @@ window.Travel = (function () {
                    ' value="' + esc(s.Name) + '">' +
           '</div>' +
           '<div class="spot-addr' + (s.LngLat ? '' : ' unset') + '">' +
-            (s.LngLat ? esc(s.Address || s.LngLat) : '未定位 — 点 🔍 搜索或直接在地图点选') +
+            (s.LngLat ? esc(s.Address || s.LngLat) : '未定位 — 点右侧搜索，或直接在地图点选') +
           '</div>' +
           '<textarea class="spot-remark" rows="1" data-i="' + i + '" data-act="remark" placeholder="备注（可选）">' + esc(s.Remark) + '</textarea>' +
         '</div>' +
         '<div class="spot-tools">' +
-          '<button class="spot-mini-btn" data-i="' + i + '" data-act="search" title="搜索地点">🔍</button>' +
-          '<button class="spot-mini-btn" data-i="' + i + '" data-act="up" title="上移"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
-          '<button class="spot-mini-btn" data-i="' + i + '" data-act="down" title="下移"' + (i === plan.Spots.length - 1 ? ' disabled' : '') + '>↓</button>' +
-          '<button class="spot-mini-btn danger" data-i="' + i + '" data-act="del" title="删除">✕</button>' +
+          '<button class="spot-mini-btn" data-i="' + i + '" data-act="search" title="搜索地点" aria-label="搜索地点">' + svgIcon('i-search') + '</button>' +
+          '<button class="spot-mini-btn" data-i="' + i + '" data-act="up" title="上移" aria-label="上移"' + (i === 0 ? ' disabled' : '') + '>' + svgIcon('i-arrow-up') + '</button>' +
+          '<button class="spot-mini-btn" data-i="' + i + '" data-act="down" title="下移" aria-label="下移"' + (i === plan.Spots.length - 1 ? ' disabled' : '') + '>' + svgIcon('i-arrow-down') + '</button>' +
+          '<button class="spot-mini-btn danger" data-i="' + i + '" data-act="del" title="删除" aria-label="删除地点">' + svgIcon('i-x') + '</button>' +
         '</div>';
       box.appendChild(el);
     });
@@ -328,7 +334,7 @@ window.Travel = (function () {
         position: ll,
         offset: new AMap.Pixel(-13, -26),
         content: '<div class="amap-spot-marker" style="--mk-bg:' + cfg.color + '"><span>' + (i + 1) + '</span></div>',
-        title: cfg.icon + ' ' + (s.Name || cfg.label)
+        title: cfg.label + '：' + (s.Name || cfg.label)
       });
       mk.setMap(map);
       markers.push(mk);
@@ -559,6 +565,14 @@ window.Travel = (function () {
   });
   document.getElementById('spotSearchResults').addEventListener('click', pickResult);
   document.getElementById('confirmTravelDeleteBtn').addEventListener('click', doDelete);
+
+  // 深链：#plan-<KeyID> 直接打开计划（刷新/分享后仍在视图内）
+  function openFromHash() {
+    var m = /^#plan-(.+)$/.exec(location.hash);
+    if (m) openPlan(m[1]);
+  }
+  window.addEventListener('hashchange', openFromHash);
+  openFromHash();
 
   return {
     newPlan: newPlan, openPlan: openPlan, backToList: backToList,

@@ -3,12 +3,12 @@
 
 {% block content %}
 <div class="page-header">
-  <h1>🎮 游戏</h1>
+  <h1><svg class="icon"><use href="#i-game"/></svg>游戏</h1>
 </div>
 
 <div class="game-grid">
   <a href="{{ url_for('game_texas') }}" class="game-card">
-    <div class="game-cover">🃏</div>
+    <div class="game-cover"><svg class="icon"><use href="#i-cards"/></svg></div>
     <div class="game-info">
       <h3>德州扑克</h3>
       <p>Texas Hold'em · 单机模式</p>
@@ -17,7 +17,7 @@
   </a>
 
   <div class="game-card game-card-locked">
-    <div class="game-cover">🔒</div>
+    <div class="game-cover"><svg class="icon"><use href="#i-lock"/></svg></div>
     <div class="game-info">
       <h3>敬请期待</h3>
       <p>更多游戏即将上线</p>

@@ -47,11 +47,11 @@
 /* 标签切换 */
 .movie-tabs {
   display: inline-flex;
-  gap: 0.25rem;
-  background: var(--bg-surface);
+  gap: 2px;
+  background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.25rem;
+  padding: 2px;
   margin-bottom: 0.75rem;
 }
 .movie-tab {
@@ -59,20 +59,30 @@
   border: none;
   color: var(--text-muted);
   padding: 0.35rem 1.1rem;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 0.9rem;
   cursor: pointer;
   font-family: inherit;
-  transition: background var(--dur-fast), color var(--dur-fast);
+  transition: background var(--dur-fast), color var(--dur-fast), box-shadow var(--dur-fast);
 }
 .movie-tab:hover { color: var(--text-primary); }
-.movie-tab.active { background: var(--accent); color: #fff; }
+.movie-tab.active {
+  background: var(--bg-surface);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
 .movie-subtabs { margin-left: 0.5rem; }
 
 .rank-caption {
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   margin-bottom: 1rem;
+}
+.rank-caption b {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--text-primary);
 }
 
 /* 榜单列表 */
@@ -83,25 +93,32 @@
   gap: 0.9rem;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
   text-decoration: none;
-  transition: border-color var(--dur-fast), transform var(--dur-fast);
+  transition: border-color var(--dur-fast), transform var(--dur-fast), box-shadow var(--dur-fast);
 }
-.rank-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.rank-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
 .rank-no {
   flex: 0 0 auto;
-  width: 1.9rem;
+  width: 2rem;
   text-align: center;
-  font-size: 1.1rem;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--text-muted);
+  opacity: .55;
 }
-.rank-card:nth-child(-n+3) .rank-no { color: var(--accent); }
+.rank-card:nth-child(-n+3) .rank-no { color: var(--honey); opacity: 1; }
 .rank-info { flex: 1; min-width: 0; }
 .rank-title {
-  font-size: 0.98rem;
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -117,12 +134,13 @@
 }
 .rank-rate {
   flex: 0 0 auto;
-  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
   font-weight: 700;
-  color: var(--success);
+  color: var(--text-primary);
 }
 .rank-rate small { font-size: 0.7rem; color: var(--text-muted); font-weight: 400; }
-.rank-rate.empty { color: var(--text-muted); font-size: 0.8rem; }
+.rank-rate.empty { font-family: var(--font-body); color: var(--text-muted); font-size: 0.8rem; }
 
 .movie-loading, .movie-empty {
   color: var(--text-muted);
@@ -170,11 +188,12 @@
   border: 2px solid var(--border);
   transition: background var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast);
 }
-.year-node .year-num { font-size: 0.85rem; }
+.year-node .year-num { font-family: var(--font-display); font-size: 0.92rem; }
 .year-node:hover { color: var(--text-primary); }
 .year-node:hover .year-dot { border-color: var(--accent); }
-.year-node.active { color: var(--accent); font-weight: 600; }
-.year-node.active .year-dot { background: var(--accent); border-color: var(--accent); transform: scale(1.15); }
+.year-node.active { color: var(--text-primary); font-weight: 700; }
+.year-node.active .year-num { color: var(--honey); font-size: 1.05rem; }
+.year-node.active .year-dot { background: var(--honey); border-color: var(--honey); transform: scale(1.2); }
 
 /* 搜索历史 */
 .movie-history {
@@ -202,9 +221,11 @@
   gap: 0.4rem;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.4rem 0.55rem;
+  transition: border-color var(--dur-fast);
 }
+.history-item:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
 .history-text {
   flex: 1;
   min-width: 0;
@@ -230,5 +251,5 @@
 
 @media (max-width: 768px) {
   .movie-layout { grid-template-columns: 1fr; }
-  .movie-history { position: static; order: -1; }
+  .movie-history { position: static; }
 }
