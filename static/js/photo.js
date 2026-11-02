@@ -84,6 +84,11 @@
     deleteModal.show();
   };
 
+  window.deletePhotoFromLightbox = function () {
+    if (!currentKeyID) return;
+    confirmDelete(currentKeyID);
+  };
+
   document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
     fetch('/delete_photo', {
       method: 'POST',
@@ -94,13 +99,23 @@
       .then(data => {
         if (data.code === 1) {
           deleteModal.hide();
+          if (lightboxModal) lightboxModal.hide();
           const card = document.querySelector(`.photo-card[data-keyid="${currentKeyID}"]`);
           if (card) card.remove();
           // Sync PHOTO_DATA so timeline stays consistent if already built
           const idx = PHOTO_DATA.findIndex(p => p.KeyID === currentKeyID);
           if (idx !== -1) PHOTO_DATA.splice(idx, 1);
           const tlEl = document.getElementById('photo-timeline');
-          if (tlEl) { delete tlEl.dataset.built; tlEl.innerHTML = ''; }
+          if (tlEl) {
+            if (tlEl.classList.contains('visible')) {
+              buildPhotoTimeline();
+              tlEl.dataset.built = '1';
+            } else {
+              delete tlEl.dataset.built;
+              tlEl.innerHTML = '';
+            }
+          }
+          UI.toast('删除成功', 'success');
         } else {
           UI.toast(data.msgs || '删除失败，请重试', 'error');
         }

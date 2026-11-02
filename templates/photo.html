@@ -102,6 +102,9 @@
         <textarea id="lightboxRemark" class="form-control-dark" rows="5"></textarea>
         <button class="btn-accent" onclick="saveRemark()">保存备注</button>
         <div id="remarkMsg" class="form-msg"></div>
+        <button class="btn-danger" onclick="deletePhotoFromLightbox()">
+          <svg class="icon"><use href="#i-trash"/></svg>删除照片
+        </button>
       </div>
     </div>
   </div>
@@ -189,6 +192,9 @@
       var thumbStrip = document.createElement('div');
       thumbStrip.className = 'timeline-thumb-strip';
       items.slice(0, 4).forEach(function (item) {
+        var box = document.createElement('div');
+        box.className = 'timeline-thumb-box';
+
         var img = document.createElement('img');
         img.className = 'timeline-thumb';
         img.src = '/uploads/' + item.Name;
@@ -196,7 +202,20 @@
         img.onclick = function () {
           openLightbox(item.KeyID, item.Name, item.Remark || '');
         };
-        thumbStrip.appendChild(img);
+
+        var del = document.createElement('button');
+        del.className = 'timeline-thumb-del';
+        del.type = 'button';
+        del.title = '删除';
+        del.setAttribute('aria-label', '删除照片');
+        del.innerHTML = '<svg class="icon"><use href="#i-x"/></svg>';
+        del.onclick = function () {
+          confirmDelete(item.KeyID);
+        };
+
+        box.appendChild(img);
+        box.appendChild(del);
+        thumbStrip.appendChild(box);
       });
       if (items.length > 4) {
         var more = document.createElement('div');

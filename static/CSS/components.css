@@ -60,6 +60,10 @@
   cursor: pointer;
   font-size: 0.85rem;
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
   transition: background var(--dur), transform var(--dur-fast);
 }
 .btn-danger:hover { background: color-mix(in srgb, var(--danger) 85%, #000); transform: translateY(-1px); }
@@ -716,6 +720,34 @@ body.modal-open { overflow: hidden; }
   transition: border-color var(--dur), transform var(--dur);
 }
 .timeline-thumb:hover { border-color: var(--accent); transform: scale(1.06); }
+.timeline-thumb-box { position: relative; display: inline-flex; }
+.timeline-thumb-del {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--bg-surface);
+  background: var(--danger);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast), transform var(--dur-fast);
+}
+.timeline-thumb-del .icon { font-size: .7rem; }
+.timeline-thumb-box:hover .timeline-thumb-del,
+.timeline-thumb-box:focus-within .timeline-thumb-del {
+  opacity: 1;
+  pointer-events: auto;
+}
+.timeline-thumb-del:active { transform: scale(.9); }
 .timeline-thumb-more {
   width: 52px;
   height: 52px;
