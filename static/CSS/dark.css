@@ -7,6 +7,7 @@
 
 /* ── CSS Variables ── */
 :root {
+  color-scheme: light;
   /* 品牌衬线：仅用于标题/品牌/大数字，正文保持无衬线保证可读 */
   --font-display: "Noto Serif SC", "Source Han Serif SC", "Georgia", "STZhongsong", "SimSun", serif;
   --font-body: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
@@ -24,12 +25,12 @@
   --sage:         #7d9b84;
   --sage-soft:    #e9f0e9;
   --text-primary: #2f3630;
-  --text-muted:   #77817a;
+  --text-muted:   #637067;         /* 4.8:1 on --bg-base，兼顾次要信息可读性 */
   --success:      #56865f;
   --danger:       #b7574c;
   --bg-nav:       rgba(245,246,241,0.96);
   --bg-input:     #f8f9f4;
-  --placeholder:  #b4bbb0;
+  --placeholder:  #68736b;         /* 4.6:1 on input background */
   --shadow-sm:    0 1px 2px rgba(47,54,48,.05), 0 1px 6px rgba(47,54,48,.04);
   --shadow-md:    0 2px 6px rgba(47,54,48,.06), 0 10px 28px rgba(47,54,48,.09);
   --shadow-lg:    0 6px 16px rgba(47,54,48,.10), 0 22px 48px rgba(47,54,48,.13);
@@ -261,6 +262,7 @@ html.js-ready .reveal.revealed {
    Dark Theme Overrides（暖墨色，绿灰调，与日间同一意象）
    ══════════════════════════════════════════════════════════════════ */
 html[data-theme="dark"] {
+  color-scheme: dark;
   --bg-base:      #181c19;
   --bg-surface:   #1f2421;
   --bg-hover:     #272d29;
@@ -278,7 +280,7 @@ html[data-theme="dark"] {
   --danger:       #d6867c;
   --bg-nav:       rgba(24,28,25,0.97);
   --bg-input:     #1b201d;
-  --placeholder:  #5c665f;
+  --placeholder:  #8a958c;         /* 5.3:1 on input background */
   --shadow-sm:    0 1px 2px rgba(0,0,0,.2), 0 1px 6px rgba(0,0,0,.12);
   --shadow-md:    0 2px 6px rgba(0,0,0,.22), 0 10px 28px rgba(0,0,0,.28);
   --shadow-lg:    0 6px 16px rgba(0,0,0,.3), 0 22px 48px rgba(0,0,0,.36);

@@ -18,14 +18,12 @@
   <div class="nav-links" id="navLinks">
     <a class="nav-link {% if request.endpoint == 'photo' %}active{% endif %}"
        href="{{ url_for('photo') }}">相册</a>
-    <a class="nav-link {% if request.endpoint in ('note', 'note_new', 'cat_notes_file') %}active{% endif %}"
+    <a class="nav-link {% if request.endpoint in ('note', 'note_new', 'note_edit', 'note_view', 'note_search', 'cat_notes_file') %}active{% endif %}"
        href="{{ url_for('note') }}">笔记</a>
     <a class="nav-link {% if request.endpoint == 'movie' %}active{% endif %}"
        href="{{ url_for('movie') }}">影单</a>
     <a class="nav-link {% if request.endpoint == 'travel' %}active{% endif %}"
        href="{{ url_for('travel') }}">旅行</a>
-    <a class="nav-link {% if request.endpoint in ('game_index', 'game_texas') %}active{% endif %}"
-       href="{{ url_for('game_index') }}">游戏</a>
   </div>
   <div class="nav-right">
     <button id="themeToggle" class="theme-toggle" title="切换日间/黑夜模式" aria-label="切换主题">
@@ -38,7 +36,7 @@
   <button class="nav-toggle" onclick="document.getElementById('appNav').classList.toggle('open')" aria-label="菜单"><svg class="icon"><use href="#i-menu"/></svg></button>
 </nav>
 
-<div class="page-body">
+<div class="page-body {% block page_class %}{% endblock %}">
   {% block content %}{% endblock %}
 </div>
 

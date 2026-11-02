@@ -43,8 +43,28 @@
   display: flex; gap: .4rem;
   opacity: 0; transition: opacity var(--dur);
 }
-.plan-card:hover .plan-card-actions { opacity: 1; }
+.plan-card:hover .plan-card-actions,
+.plan-card:focus-within .plan-card-actions { opacity: 1; }
+@media (hover: none) { .plan-card-actions { opacity: 1; } }
 .plan-card-actions .icon-btn { width: 32px; height: 32px; font-size: .8rem; }
+.plan-card-foot {
+  display: flex;
+  align-items: center;
+  margin-top: .7rem;
+  padding-top: .6rem;
+  border-top: 1px solid var(--border);
+}
+.plan-export-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  color: var(--accent);
+  font-size: .78rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+.plan-export-link .icon { font-size: .85rem; }
+.plan-export-link:hover { color: var(--accent-hover); }
 
 /* 编辑布局 */
 .travel-layout {

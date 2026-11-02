@@ -1,3 +1,5 @@
+> 历史文档：笔记已重构为树形层级结构，当前实现见 `CLAUDE.md` 的“笔记模块”。
+
 # 笔记详情页优化 + 时间轴视图 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

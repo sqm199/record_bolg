@@ -27,6 +27,12 @@
           {% endif %}
         </div>
         {% if p.Note %}<div class="plan-card-note">{{ p.Note }}</div>{% endif %}
+        <div class="plan-card-foot">
+          <a class="plan-export-link" href="{{ url_for('travel_export', key_id=p.KeyID) }}" download
+             onclick="event.stopPropagation()">
+            <svg class="icon"><use href="#i-download"/></svg>导出 Word
+          </a>
+        </div>
       </div>
       <div class="plan-card-actions">
         <button class="icon-btn" title="编辑" aria-label="编辑计划" onclick="event.stopPropagation(); Travel.openPlan('{{ p.KeyID }}')"><svg class="icon"><use href="#i-pencil"/></svg></button>
@@ -49,6 +55,7 @@
     <button class="btn-ghost" onclick="Travel.backToList()"><svg class="icon"><use href="#i-arrow-left"/></svg>返回列表</button>
     <h1 id="editorTitle">新建计划</h1>
     <div class="row-actions">
+      <button class="btn-ghost" id="exportWordBtn" onclick="Travel.exportWord()"><svg class="icon"><use href="#i-download"/></svg>导出 Word</button>
       <button class="btn-ghost" id="recomputeBtn" onclick="Travel.recompute()"><svg class="icon"><use href="#i-refresh"/></svg>重新计算路线</button>
       <button class="btn-accent" id="savePlanBtn" onclick="Travel.savePlan()">保存计划</button>
     </div>

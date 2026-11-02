@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}搜索笔记 — 羚羊之家{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/notes.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="notes-workspace is-overview">
+  {% include "_note_rail.html" %}
+
+  <main class="notes-main" id="notesMain">
+    <button type="button" class="notes-mobile-bar" data-notes-rail-toggle
+            aria-controls="notesRail" aria-expanded="false">
+      <svg class="icon"><use href="#i-list"/></svg>
+      <span>目录</span>
+      <span class="notes-mobile-count">{{ stats.total }}</span>
+    </button>
+
+    <nav class="note-lineage" aria-label="笔记层级">
+      <a href="{{ url_for('note') }}">笔记</a>
+      <svg class="icon note-lineage-sep" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      <span class="is-current" aria-current="page">搜索</span>
+    </nav>
+
+    <header class="notes-title-row notes-search-head">
+      <div>
+        <h1>{% if q %}搜索「{{ q }}」{% else %}搜索笔记{% endif %}</h1>
+        <p class="notes-sub">
+          {% if q %}找到 {{ results | length }} 个结果，标题命中优先。{% else %}搜索所有笔记的标题与正文。{% endif %}
+        </p>
+      </div>
+    </header>
+
+    <form class="notes-search notes-search-main" action="{{ url_for('note_search') }}" method="get" role="search">
+      <label class="sr-only" for="noteSearchMain">搜索笔记标题与正文</label>
+      <svg class="icon notes-search-icon" aria-hidden="true"><use href="#i-search"/></svg>
+      <input id="noteSearchMain" name="q" type="search" value="{{ q }}"
+             placeholder="输入关键词，支持标题与正文" autocomplete="off" spellcheck="false" autofocus>
+      <button type="submit" class="btn-ghost">搜索</button>
+    </form>
+    <p class="notes-search-help">加密笔记解锁后才会搜索正文；正文中的 <span class="note-syntax">[[笔记标题]]</span> 会转换为站内链接。</p>
+
+    {% if q %}
+      {% if results %}
+      <div class="note-search-list">
+        {% for result in results %}
+        <a class="note-search-row" href="{{ url_for('note_view', keyid=result.id) }}">
+          <div class="note-search-row-head">
+            <span class="note-search-title">
+              {{ result.title_html | safe }}
+              {% if result.locked %}<svg class="icon" aria-label="加密笔记"><use href="#i-lock"/></svg>{% endif %}
+            </span>
+            <time datetime="{{ result.updated }}">{{ result.updated[:10] if result.updated else '—' }}</time>
+          </div>
+          <div class="note-search-path">
+            {% if result.path %}{{ result.path | join(' / ') }}{% else %}顶层笔记{% endif %}
+            <span class="notes-dot">·</span>第 {{ result.depth + 1 }} 层
+          </div>
+          {% if result.snippet_html %}
+          <p class="note-search-snippet">{{ result.snippet_html | safe }}</p>
+          {% elif result.locked %}
+          <p class="note-search-snippet is-muted">加密笔记，解锁后可搜索正文。</p>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="notes-empty">
+        <h2>没有找到「{{ q }}」</h2>
+        <p>试试更短的关键词，或从顶层主题重新浏览。</p>
+        <a href="{{ url_for('note') }}" class="btn-ghost">回到全部笔记</a>
+      </div>
+      {% endif %}
+    {% else %}
+    <section class="notes-section" aria-labelledby="searchRootsTitle">
+      <div class="notes-section-head">
+        <h2 id="searchRootsTitle">从顶层主题开始</h2>
+        <span class="notes-section-meta">{{ roots | length }} 个</span>
+      </div>
+      {% if roots %}
+      <div class="note-root-list">
+        {% for note in roots %}
+        <a class="note-root-row" href="{{ url_for('note_view', keyid=note.id) }}">
+          <span class="note-root-mark" aria-hidden="true"></span>
+          <span class="note-root-main">
+            <span class="note-root-name">{{ note.name }}</span>
+            <span class="note-root-meta">{{ note.descendant_count }} 篇子笔记 · 更新于 {{ note.updated[:10] if note.updated else '—' }}</span>
+          </span>
+          <span class="note-root-side">
+            <svg class="icon note-row-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="notes-empty">
+        <h2>笔记库还是空的</h2>
+        <p>先写一篇，再回来搜索。</p>
+        <a href="{{ url_for('note_new') }}" class="btn-ink">新建笔记</a>
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/notes.js') }}"></script>
+{% endblock %}

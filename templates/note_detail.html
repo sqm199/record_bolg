@@ -1,112 +1,271 @@
 {% extends "base.html" %}
-{% block title %}{{ item.Name }} — 羚羊之家{% endblock %}
+{% block title %}{{ item.Name }} — 笔记{% endblock %}
+{% block page_class %}page-wide{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/notes.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <a href="{{ url_for('note') }}" class="btn-ghost" style="font-size:0.82rem"><svg class="icon"><use href="#i-arrow-left"/></svg>返回笔记列表</a>
-  <div id="header-btns">
-    <button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)"><svg class="icon"><use href="#i-pencil"/></svg>编辑</button>
-  </div>
+<div class="notes-workspace is-detail">
+  {% include "_note_rail.html" %}
+
+  <main class="notes-main" id="notesMain" data-note-id="{{ item.KeyID }}">
+    <button type="button" class="notes-mobile-bar" data-notes-rail-toggle
+            aria-controls="notesRail" aria-expanded="false">
+      <svg class="icon"><use href="#i-list"/></svg>
+      <span>目录</span>
+      <span class="notes-mobile-count">{{ stats.total }}</span>
+    </button>
+
+    <nav class="note-lineage" aria-label="笔记层级">
+      <a href="{{ url_for('note') }}">笔记</a>
+      {% for crumb in lineage %}
+      <svg class="icon note-lineage-sep" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      <a href="{{ url_for('note_view', keyid=crumb.id) }}"
+         {% if loop.last %}class="is-current" aria-current="page"{% endif %}>{{ crumb.name }}</a>
+      {% endfor %}
+    </nav>
+
+    <header class="note-head">
+      <div class="note-depth" aria-label="第 {{ item.Depth + 1 }} 层，共 {{ NOTE_MAX_CHILD_DEPTH + 1 }} 层">
+        <span class="note-depth-ticks" aria-hidden="true">
+          {% for tick in range(NOTE_MAX_CHILD_DEPTH + 1) %}<span class="note-depth-tick{% if tick <= item.Depth %} is-on{% endif %}"></span>{% endfor %}
+        </span>
+        <span class="note-depth-label">第 {{ item.Depth + 1 }} 层</span>
+      </div>
+
+      <h1 class="note-head-title">{{ item.Name }}</h1>
+
+      <div class="note-meta-line">
+        <span>更新于 <time datetime="{{ item.ModifyTime }}">{{ item.ModifyTime[:10] if item.ModifyTime else '—' }}</time></span>
+        {% if not locked %}
+        <span class="notes-dot">·</span>
+        <span>{{ words }} 字</span>
+        <span class="notes-dot">·</span>
+        <span>约 {{ read_minutes }} 分钟</span>
+        {% endif %}
+        {% if item.IsEncrypted %}
+        <span class="notes-dot">·</span>
+        <span class="badge honey"><svg class="icon"><use href="#i-lock"/></svg>加密</span>
+        {% endif %}
+      </div>
+
+      {% if not locked %}
+      <div class="note-actions">
+        <a class="btn-ink" id="noteEditLink" href="{{ url_for('note_edit', keyid=item.KeyID) }}">
+          <svg class="icon"><use href="#i-pencil"/></svg>编辑
+        </a>
+        {% if item.Depth < NOTE_MAX_CHILD_DEPTH %}
+        <a class="btn-ghost" id="noteNewChildLink" href="{{ url_for('note_new', parent=item.KeyID) }}">
+          <svg class="icon"><use href="#i-corner-down-right"/></svg>新建子笔记
+        </a>
+        {% endif %}
+        <button type="button" class="btn-ghost" id="noteMoveBtn">
+          <svg class="icon"><use href="#i-move"/></svg>移动
+        </button>
+        <button type="button" class="btn-ghost note-danger-text" id="noteDeleteBtn">
+          <svg class="icon"><use href="#i-trash"/></svg>删除
+        </button>
+      </div>
+      {% endif %}
+    </header>
+
+    {% if locked %}
+    <section class="note-lock-panel" aria-labelledby="noteLockTitle">
+      <div class="note-lock-main">
+        <div class="note-lock-icon"><svg class="icon"><use href="#i-lock"/></svg></div>
+        <h2 id="noteLockTitle">这篇笔记已加密</h2>
+        <p>输入访问密码后，本次登录内可以查看和编辑。</p>
+        <form id="noteUnlockForm" class="note-lock-form" autocomplete="off">
+          <label class="sr-only" for="noteUnlockPassword">访问密码</label>
+          <input type="password" id="noteUnlockPassword" class="form-control-dark"
+                 placeholder="请输入访问密码" required>
+          <button type="submit" class="btn-ink" id="noteUnlockBtn">解锁</button>
+        </form>
+        <p class="form-error form-msg" id="noteUnlockMsg" role="alert"></p>
+      </div>
+      <div class="note-lock-context">
+        <h3 class="note-lock-context-title">所在位置</h3>
+        <p class="note-lock-path">
+          {% for crumb in lineage %}{{ crumb.name }}{% if not loop.last %} / {% endif %}{% endfor %}
+        </p>
+        {% if item.ParentID %}
+        <a href="{{ url_for('note_view', keyid=item.ParentID) }}">返回上级笔记</a>
+        {% else %}
+        <a href="{{ url_for('note') }}">返回笔记库</a>
+        {% endif %}
+        <p class="note-lock-hint">解锁只对本次登录生效，不会保存密码。</p>
+      </div>
+    </section>
+
+    {% if prev_note or next_note %}
+    <nav class="note-siblings is-lock-nav" aria-label="同级笔记">
+      {% if prev_note %}
+      <a class="note-sibling" href="{{ url_for('note_view', keyid=prev_note.KeyID) }}">
+        <span class="note-sibling-label"><svg class="icon"><use href="#i-arrow-left"/></svg>上一篇</span>
+        <span class="note-sibling-name">{{ prev_note.Name }}</span>
+      </a>
+      {% else %}<span></span>{% endif %}
+      {% if next_note %}
+      <a class="note-sibling is-next" href="{{ url_for('note_view', keyid=next_note.KeyID) }}">
+        <span class="note-sibling-label">下一篇<svg class="icon"><use href="#i-arrow-right"/></svg></span>
+        <span class="note-sibling-name">{{ next_note.Name }}</span>
+      </a>
+      {% endif %}
+    </nav>
+    {% endif %}
+    {% else %}
+    <article class="note-body note-reading" id="noteBody">
+      {{ html_body | safe }}
+    </article>
+
+    {% if prev_note or next_note %}
+    <nav class="note-siblings" aria-label="同级笔记">
+      {% if prev_note %}
+      <a class="note-sibling" href="{{ url_for('note_view', keyid=prev_note.KeyID) }}">
+        <span class="note-sibling-label"><svg class="icon"><use href="#i-arrow-left"/></svg>上一篇</span>
+        <span class="note-sibling-name">{{ prev_note.Name }}</span>
+      </a>
+      {% else %}<span></span>{% endif %}
+      {% if next_note %}
+      <a class="note-sibling is-next" href="{{ url_for('note_view', keyid=next_note.KeyID) }}">
+        <span class="note-sibling-label">下一篇<svg class="icon"><use href="#i-arrow-right"/></svg></span>
+        <span class="note-sibling-name">{{ next_note.Name }}</span>
+      </a>
+      {% endif %}
+    </nav>
+    {% endif %}
+    {% endif %}
+  </main>
+
+  {% if not locked %}
+  <aside class="note-aside" aria-label="本篇导航">
+    <section class="note-aside-section" id="noteTocSection" hidden>
+      <h2 class="note-aside-title">本篇目录</h2>
+      <nav class="note-toc" id="noteToc" aria-label="本篇目录"></nav>
+    </section>
+
+    <section class="note-aside-section" aria-labelledby="noteChildrenTitle">
+      <h2 class="note-aside-title" id="noteChildrenTitle">
+        子笔记
+        {% if children %}<span class="note-aside-count">{{ children | length }}</span>{% endif %}
+      </h2>
+      {% if children %}
+      <ul class="note-child-list">
+        {% for child in children %}
+        <li>
+          <a class="note-child-link" href="{{ url_for('note_view', keyid=child.id) }}">
+            <span class="note-child-name">{{ child.name }}</span>
+            {% if child.locked %}<svg class="icon" aria-label="加密"><use href="#i-lock"/></svg>{% endif %}
+            {% if child.children %}<span class="note-child-count">{{ child.children | length }}</span>{% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="note-aside-empty">还没有子笔记</p>
+      {% endif %}
+
+      {% if item.Depth < NOTE_MAX_CHILD_DEPTH %}
+      <a class="note-aside-add" href="{{ url_for('note_new', parent=item.KeyID) }}">
+        <svg class="icon"><use href="#i-plus"/></svg>新建子笔记
+      </a>
+      {% else %}
+      <p class="note-aside-limit">已是第三层子笔记，不能再向下展开。</p>
+      {% endif %}
+    </section>
+
+    {% if backlinks %}
+    <section class="note-aside-section" aria-labelledby="noteBacklinksTitle">
+      <h2 class="note-aside-title" id="noteBacklinksTitle">
+        被引用
+        <span class="note-aside-count">{{ backlinks | length }}</span>
+      </h2>
+      <ul class="note-child-list">
+        {% for ref in backlinks %}
+        <li>
+          <a class="note-child-link" href="{{ url_for('note_view', keyid=ref.id) }}">
+            <span class="note-child-name">{{ ref.name }}</span>
+            {% if ref.encrypted %}<svg class="icon" aria-label="加密"><use href="#i-lock"/></svg>{% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </aside>
+  {% endif %}
 </div>
 
-<!-- 读模式 -->
-<div id="read-mode">
-  <div class="note-meta-bar">
-    <h1 class="note-main-title">{{ item.Name }}</h1>
-    <div class="note-meta-row">
-      <span class="meta-item">{{ item.AddPerson }}</span>
-      <span class="dot">·</span>
-      <span class="meta-item">{{ item.AddTime[:10] if item.AddTime else '' }}</span>
-      <span class="dot">·</span>
-      <span class="badge muted">{{ item.ProductTypeRemark }}</span>
+{% if not locked %}
+<!-- 移动笔记 -->
+<div class="app-modal" id="noteMoveModal" aria-labelledby="noteMoveTitle">
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-card narrow">
+    <div class="app-modal-header">
+      <h2 class="app-modal-title" id="noteMoveTitle">移动笔记</h2>
+      <button type="button" class="app-modal-close" data-modal-dismiss aria-label="关闭">&times;</button>
+    </div>
+    <div class="app-modal-body col-gap">
+      <label class="field-label" for="noteMoveParent">新的上级</label>
+      <select id="noteMoveParent" class="form-control-dark">
+        <option value=""{% if not item.ParentID %} selected{% endif %}>移到顶层</option>
+        {% for option in parent_options %}
+        <option value="{{ option.id }}"{% if option.id == item.ParentID %} selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+      <p class="field-help">移动后会保留这篇笔记的全部子笔记，但不能超过三级子笔记的限制。</p>
+      <p class="form-error form-msg" id="noteMoveMsg" role="alert"></p>
+    </div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn-ghost" data-modal-dismiss>取消</button>
+      <button type="button" class="btn-ink" id="noteMoveSaveBtn">移动</button>
     </div>
   </div>
-  <div class="note-body" id="note-body">{{ html_body | safe }}</div>
 </div>
 
-<!-- 编辑模式（默认隐藏） -->
-<div id="edit-mode" style="display:none">
-  <div class="field" style="margin-bottom:0.85rem">
-    <label class="field-label">标题</label>
-    <input type="text" id="edit-title" class="form-control-dark"
-           style="font-size:1rem;font-weight:600" value="{{ item.Name }}">
+<!-- 删除笔记 -->
+<div class="app-modal" id="noteDeleteModal" aria-labelledby="noteDeleteTitle">
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-card">
+    <div class="app-modal-header">
+      <h2 class="app-modal-title" id="noteDeleteTitle">删除「{{ item.Name }}」</h2>
+      <button type="button" class="app-modal-close" data-modal-dismiss aria-label="关闭">&times;</button>
+    </div>
+    <div class="app-modal-body col-gap">
+      {% if descendant_count %}
+      <fieldset class="note-delete-options">
+        <legend class="field-label">这篇笔记下面还有 {{ descendant_count }} 篇子笔记，怎么处理？</legend>
+        <label class="note-delete-option">
+          <input type="radio" name="deleteMode" value="detach" checked>
+          <span>
+            <strong>{{ children | length }} 篇直接子笔记上移一层</strong>
+            <small>只删除当前这篇；更深层的子笔记保持原有关系。</small>
+          </span>
+        </label>
+        <label class="note-delete-option">
+          <input type="radio" name="deleteMode" value="subtree">
+          <span>
+            <strong>连同子笔记一起删除</strong>
+            <small>当前笔记和它下面的 {{ descendant_count }} 篇子笔记都会移入回收状态。</small>
+          </span>
+        </label>
+      </fieldset>
+      {% else %}
+      <p class="note-delete-copy">删除后无法在界面中恢复，确认继续？</p>
+      {% endif %}
+      <p class="form-error form-msg" id="noteDeleteMsg" role="alert"></p>
+    </div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn-ghost" data-modal-dismiss>取消</button>
+      <button type="button" class="btn-danger" id="noteDeleteConfirmBtn">删除</button>
+    </div>
   </div>
-  <div class="field" style="margin-bottom:0.5rem">
-    <label class="field-label">内容</label>
-    <textarea id="edit-content">{% if item.get('Content') %}{{ item.get('Content') }}{% else %}{{ html_body }}{% endif %}</textarea>
-  </div>
-  <div id="edit-msg" class="form-error form-msg"></div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
-<script>
-  const NOTE_KEYID = {{ item.KeyID | tojson }};
-  let easyMDE = null;
-
-  function enterEditMode() {
-    document.getElementById('read-mode').style.display = 'none';
-    document.getElementById('edit-mode').style.display = 'block';
-    document.getElementById('header-btns').innerHTML =
-      '<button class="btn-ghost" onclick="exitEditMode()">取消</button>' +
-      '<button class="btn-accent" onclick="saveEdit()" style="margin-left:.5rem">保存</button>';
-    if (!easyMDE) {
-      easyMDE = new EasyMDE({
-        element: document.getElementById('edit-content'),
-        spellChecker: false,
-        autosave: { enabled: false },
-        toolbar: [
-          'bold', 'italic', 'heading', '|',
-          'quote', 'unordered-list', 'ordered-list', '|',
-          'link', 'image', '|',
-          'preview', 'side-by-side', 'fullscreen'
-        ]
-      });
-    }
-  }
-
-  function exitEditMode() {
-    document.getElementById('edit-mode').style.display = 'none';
-    document.getElementById('read-mode').style.display = 'block';
-    document.getElementById('header-btns').innerHTML =
-      '<button class="btn-ghost" id="edit-btn" onclick="enterEditMode()" style="color:var(--accent)"><svg class="icon"><use href="#i-pencil"/></svg>编辑</button>';
-  }
-
-  function saveEdit() {
-    const title = document.getElementById('edit-title').value.trim();
-    const msgEl = document.getElementById('edit-msg');
-    if (!title) {
-      msgEl.textContent = '标题不能为空';
-      return;
-    }
-    msgEl.textContent = '';
-    if (!easyMDE) return;
-
-    fetch('/note/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        KeyID:   NOTE_KEYID,
-        title:   title,
-        content: easyMDE.value()
-      })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.code === 1) {
-        window.location.reload();
-      } else {
-        msgEl.textContent = data.msgs || '保存失败';
-      }
-    })
-    .catch(() => {
-      msgEl.textContent = '网络错误，请重试';
-    });
-  }
-</script>
+<script src="{{ url_for('static', filename='js/notes.js') }}"></script>
 {% endblock %}

@@ -1,112 +1,170 @@
 {% extends "base.html" %}
-{% block title %}新建笔记 — 羚羊之家{% endblock %}
+{% block title %}{% if mode == 'edit' %}编辑 {{ note.Name }}{% else %}新建笔记{% endif %} — 笔记{% endblock %}
+{% block page_class %}page-wide{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/notes.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1>新建笔记</h1>
-  <a href="{{ url_for('note') }}" class="btn-ghost">取消</a>
-</div>
+<main class="notes-editor" id="notesEditor">
+  <div class="editor-topbar">
+    <div class="editor-heading">
+      <h1 class="editor-screen-title">{% if mode == 'edit' %}编辑笔记{% else %}新建笔记{% endif %}</h1>
+      <nav class="note-lineage" aria-label="笔记层级">
+        <a href="{{ url_for('note') }}">笔记</a>
+        <svg class="icon note-lineage-sep" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        {% if mode == 'edit' %}
+        <a href="{{ url_for('note_view', keyid=note.KeyID) }}">{{ note.Name }}</a>
+        <svg class="icon note-lineage-sep" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+        <span class="is-current" aria-current="page">编辑</span>
+        {% else %}
+        <span class="is-current" aria-current="page">新建</span>
+        {% endif %}
+      </nav>
+    </div>
 
-<div class="card-dark padded-card">
-  <div class="field" style="margin-bottom:1rem">
-    <label class="field-label">标题 *</label>
-    <input type="text" id="noteTitle" class="form-control-dark" placeholder="请输入笔记标题">
-    <div id="titleError" class="form-error form-msg" style="margin-top:.25rem"></div>
-  </div>
-  <div class="field" style="margin-bottom:1.25rem">
-    <label class="field-label">内容</label>
-    <textarea id="noteContent"></textarea>
-  </div>
-  <div style="margin-bottom:1.25rem">
-    <label class="checkbox-row">
-      <input type="checkbox" id="noteEncrypt" onchange="toggleEncrypt()">
-      <svg class="icon"><use href="#i-lock"/></svg> 加密笔记（访问需输入密码）
-    </label>
-    <div id="passwordWrap" style="display:none;margin-top:.6rem">
-      <input type="password" id="notePassword" class="form-control-dark" placeholder="设置访问密码" autocomplete="new-password">
+    <div class="editor-actions">
+      <span class="editor-status" id="editorStatus" role="status">未修改</span>
+      <a href="{{ cancel_url }}" class="btn-ghost" id="editorCancelBtn">取消</a>
+      <button type="button" class="btn-ink" id="editorSaveBtn">
+        <svg class="icon"><use href="#i-check"/></svg>保存
+      </button>
     </div>
   </div>
-  <div class="row-actions">
-    <button class="btn-accent" id="saveBtn" onclick="saveNote()">保存笔记</button>
-    <div id="saveMsg" class="form-msg"></div>
+
+  <div class="editor-draft-banner" id="draftBanner" hidden>
+    <span>发现一篇未保存的草稿。</span>
+    <button type="button" class="btn-ghost" id="draftRestoreBtn">恢复草稿</button>
+    <button type="button" class="editor-text-btn" id="draftDiscardBtn">丢弃</button>
+  </div>
+
+  <div class="editor-grid">
+    <div class="editor-writing">
+      <label class="sr-only" for="noteTitle">标题</label>
+      <input type="text" id="noteTitle" class="editor-title"
+             value="{{ note.Name }}" placeholder="无标题笔记"
+             maxlength="120" autocomplete="off" spellcheck="false"
+             {% if mode == 'new' %}autofocus{% endif %}>
+
+      <label class="sr-only" for="noteContent">正文</label>
+      <div class="editor-fallback-toolbar" id="editorFallbackToolbar" role="toolbar"
+           aria-label="Markdown 格式" hidden>
+        <button type="button" data-md="bold">粗体</button>
+        <button type="button" data-md="italic">斜体</button>
+        <button type="button" data-md="heading">标题</button>
+        <button type="button" data-md="list">列表</button>
+        <button type="button" data-md="quote">引用</button>
+        <button type="button" data-md="link">链接</button>
+        <button type="button" data-md="code">代码</button>
+      </div>
+      <textarea id="noteContent" placeholder="用 Markdown 写点什么……">{{ note.Content }}</textarea>
+
+      <div class="editor-foot">
+        <span id="editorWordCount">0 字</span>
+        <span class="notes-dot">·</span>
+        <span>支持 Markdown</span>
+        <span class="notes-dot">·</span>
+        <span><kbd>Ctrl</kbd> + <kbd>S</kbd> 保存</span>
+      </div>
+      <p class="form-error form-msg" id="editorMsg" role="alert"></p>
+    </div>
+
+    <aside class="editor-settings" aria-label="笔记设置">
+      <section class="editor-setting">
+        <label class="field-label" for="noteParent">所属上级</label>
+        <select id="noteParent" class="form-control-dark">
+          <option value="">顶层笔记</option>
+          {% for option in parent_options %}
+          <option value="{{ option.id }}" data-depth="{{ option.depth }}"
+                  title="{{ option.path }}"{% if option.id == note.ParentID %} selected{% endif %}>
+            {{ option.label }}
+          </option>
+          {% endfor %}
+        </select>
+        <p class="field-help" id="parentDepthHint">根笔记之下最多 {{ NOTE_MAX_CHILD_DEPTH }} 层子笔记。</p>
+      </section>
+
+      <section class="editor-setting">
+        <label class="checkbox-row editor-check">
+          <input type="checkbox" id="noteEncrypt" {% if note.IsEncrypted %}checked{% endif %}>
+          <svg class="icon"><use href="#i-lock"/></svg>
+          <span>加密这篇笔记</span>
+        </label>
+        <div id="passwordWrap" class="editor-password" {% if not note.IsEncrypted %}hidden{% endif %}>
+          <label class="sr-only" for="notePassword">访问密码</label>
+          <input type="password" id="notePassword" class="form-control-dark"
+                 placeholder="{% if note.HasPassword %}留空则保持原密码{% else %}设置访问密码{% endif %}"
+                 autocomplete="new-password">
+          <p class="field-help">正文不会出现在浏览器的本地草稿里。</p>
+        </div>
+      </section>
+
+      <section class="editor-setting">
+        <span class="field-label">引用其他笔记</span>
+        <p class="field-help">在正文里写 <span class="note-syntax">[[笔记标题]]</span> 或 <span class="note-syntax">[[上级 / 子笔记]]</span> 即可建立站内链接。</p>
+        <button type="button" class="btn-ghost editor-insert-link" id="insertNoteLinkBtn">
+          <svg class="icon"><use href="#i-link"/></svg>插入笔记链接
+        </button>
+      </section>
+
+      <section class="editor-setting editor-setting-note">
+        <p class="field-help">保存后会立即出现在目录树中；修改标题不会改变旧链接。</p>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<!-- 插入笔记链接 -->
+<div class="app-modal" id="noteLinkModal" aria-labelledby="noteLinkTitle">
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-card">
+    <div class="app-modal-header">
+      <h2 class="app-modal-title" id="noteLinkTitle">插入笔记链接</h2>
+      <button type="button" class="app-modal-close" data-modal-dismiss aria-label="关闭">&times;</button>
+    </div>
+    <div class="app-modal-body col-gap">
+      <label class="sr-only" for="noteLinkSearch">筛选笔记</label>
+      <input type="search" id="noteLinkSearch" class="form-control-dark"
+             placeholder="筛选笔记标题" autocomplete="off">
+      <div class="note-link-list" id="noteLinkList"></div>
+      <p class="field-help">点击笔记后，会在光标处插入 <code>[[标题]]</code>。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 放弃修改 -->
+<div class="app-modal" id="editorDiscardModal" aria-labelledby="editorDiscardTitle">
+  <div class="app-modal-backdrop"></div>
+  <div class="app-modal-card narrow">
+    <div class="app-modal-header">
+      <h2 class="app-modal-title" id="editorDiscardTitle">放弃未保存的修改？</h2>
+      <button type="button" class="app-modal-close" data-modal-dismiss aria-label="关闭">&times;</button>
+    </div>
+    <div class="app-modal-body">
+      <p class="note-delete-copy">离开后，这次修改不会保存。</p>
+    </div>
+    <div class="app-modal-footer">
+      <button type="button" class="btn-ghost" data-modal-dismiss>继续编辑</button>
+      <button type="button" class="btn-danger" id="editorDiscardConfirmBtn">放弃修改</button>
+    </div>
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
-<script>
-  const easyMDE = new EasyMDE({
-    element: document.getElementById('noteContent'),
-    placeholder: '用 Markdown 写点什么…',
-    spellChecker: false,
-    autosave: { enabled: false },
-    toolbar: [
-      'bold', 'italic', 'heading', '|',
-      'quote', 'unordered-list', 'ordered-list', '|',
-      'link', 'image', '|',
-      'preview', 'side-by-side', 'fullscreen'
-    ]
-  });
-
-  function toggleEncrypt() {
-    const wrap = document.getElementById('passwordWrap');
-    wrap.style.display = document.getElementById('noteEncrypt').checked ? 'block' : 'none';
-  }
-
-  function saveNote() {
-    const title      = document.getElementById('noteTitle').value.trim();
-    const titleError = document.getElementById('titleError');
-    const saveMsg    = document.getElementById('saveMsg');
-    const saveBtn    = document.getElementById('saveBtn');
-    const encrypted  = document.getElementById('noteEncrypt').checked;
-    const password   = document.getElementById('notePassword').value;
-
-    if (!title) {
-      titleError.textContent = '请输入标题';
-      return;
-    }
-    if (encrypted && !password) {
-      saveMsg.style.color = 'var(--danger)';
-      saveMsg.textContent = '加密笔记必须设置密码';
-      return;
-    }
-    titleError.textContent = '';
-    saveBtn.disabled       = true;
-    saveBtn.textContent    = '保存中…';
-    saveMsg.textContent    = '';
-
-    fetch('/note/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        title:        title,
-        content:      easyMDE.value(),
-        is_encrypted: encrypted ? '1' : '0',
-        password:     password
-      })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.code === 1) {
-        window.location.href = '/note';
-      } else {
-        saveMsg.style.color = 'var(--danger)';
-        saveMsg.textContent = data.msgs || '保存失败';
-        saveBtn.disabled    = false;
-        saveBtn.textContent = '保存笔记';
-      }
-    })
-    .catch(() => {
-      saveMsg.style.color = 'var(--danger)';
-      saveMsg.textContent = '网络错误，请重试';
-      saveBtn.disabled    = false;
-      saveBtn.textContent = '保存笔记';
-    });
-  }
-</script>
+<script id="editorConfig" type="application/json">{{ {
+  "mode": mode,
+  "keyid": note.KeyID,
+  "title": note.Name,
+  "content": note.Content,
+  "parentId": note.ParentID,
+  "isEncrypted": 1 if note.IsEncrypted else 0,
+  "hasPassword": 1 if note.HasPassword else 0,
+  "maxChildDepth": NOTE_MAX_CHILD_DEPTH,
+  "cancelUrl": cancel_url
+} | tojson }}</script>
+<script id="noteLinkData" type="application/json">{{ link_notes | tojson }}</script>
+<script src="{{ url_for('static', filename='js/notes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/note-editor.js') }}"></script>
 {% endblock %}

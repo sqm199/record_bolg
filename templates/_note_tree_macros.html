@@ -1,0 +1,30 @@
+{% macro note_tree(nodes, current_id) %}
+<ul class="note-tree-list">
+  {% for node in nodes %}
+  <li class="note-tree-item" data-id="{{ node.id }}" data-depth="{{ node.depth }}">
+    <div class="note-tree-row{% if node.id == current_id %} is-current{% endif %}">
+      {% if node.children %}
+      <button type="button" class="note-tree-toggle" aria-label="收起 {{ node.name }}" aria-expanded="true">
+        <svg class="icon"><use href="#i-chevron-down"/></svg>
+      </button>
+      {% else %}
+      <span class="note-tree-toggle is-empty" aria-hidden="true"></span>
+      {% endif %}
+      <a class="note-tree-link" href="{{ url_for('note_view', keyid=node.id) }}"
+         title="{{ node.name }}"{% if node.id == current_id %} aria-current="page"{% endif %}>
+        <span class="note-tree-name">{{ node.name }}</span>
+        {% if node.locked %}<svg class="icon note-tree-lock" aria-label="加密笔记"><use href="#i-lock"/></svg>{% endif %}
+        {% if node.children %}<span class="note-tree-count">{{ node.children | length }}</span>{% endif %}
+      </a>
+      {% if node.depth < NOTE_MAX_CHILD_DEPTH %}
+      <a class="note-tree-add" href="{{ url_for('note_new', parent=node.id) }}"
+         title="新建子笔记" aria-label="在 {{ node.name }} 下新建子笔记">
+        <svg class="icon"><use href="#i-plus"/></svg>
+      </a>
+      {% endif %}
+    </div>
+    {% if node.children %}{{ note_tree(node.children, current_id) }}{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endmacro %}

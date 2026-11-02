@@ -1,187 +1,115 @@
 {% extends "base.html" %}
-{% block title %}Note — 羚羊之家{% endblock %}
+{% block title %}笔记 — 羚羊之家{% endblock %}
+{% block page_class %}page-wide{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='CSS/notes.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1><svg class="icon"><use href="#i-note"/></svg>笔记</h1>
-  <div style="display:flex;align-items:center;gap:0.5rem">
-    <div class="segmented">
-      <button class="view-btn" data-view="list" onclick="switchNoteView('list')"><svg class="icon"><use href="#i-list"/></svg>列表</button>
-      <button class="view-btn active" data-view="timeline" onclick="switchNoteView('timeline')"><svg class="icon"><use href="#i-timeline"/></svg>时间轴</button>
-    </div>
-    <a href="{{ url_for('note_new') }}" class="btn-accent"><svg class="icon"><use href="#i-plus"/></svg>新建笔记</a>
-  </div>
-</div>
+<div class="notes-workspace is-overview">
+  {% include "_note_rail.html" %}
 
-<!-- 列表视图 -->
-<div id="note-list-view">
-{% if value %}
-<div class="note-list">
-  {% for item in value %}
-  <div class="note-card" id="note-{{ item.KeyID }}">
-    <div class="note-title">{% if item.IsEncrypted %}<svg class="icon" title="加密"><use href="#i-lock"/></svg>{% endif %}{{ item.Name }}</div>
-    <span class="note-meta">{{ item.AddPerson }} · {{ item.AddTime[:10] if item.AddTime else '' }}</span>
-    <a href="{{ url_for('cat_notes_file', filename=item.Path) }}"
-       class="btn-ghost" style="font-size:0.82rem">查看</a>
-    <button class="note-delete" title="删除" aria-label="删除笔记"
-            onclick="confirmNoteDelete('{{ item.KeyID }}')"><svg class="icon"><use href="#i-x"/></svg></button>
-  </div>
-  {% endfor %}
-</div>
-{% else %}
-<div class="empty-state">
-  <div class="empty-icon"><svg class="icon"><use href="#i-note"/></svg></div>
-  <div>还没有笔记，点「新建笔记」写第一篇</div>
-</div>
-{% endif %}
-</div>
+  <main class="notes-main" id="notesMain">
+    <button type="button" class="notes-mobile-bar" data-notes-rail-toggle
+            aria-controls="notesRail" aria-expanded="false">
+      <svg class="icon"><use href="#i-list"/></svg>
+      <span>目录</span>
+      <span class="notes-mobile-count">{{ stats.total }}</span>
+    </button>
 
-<!-- 时间轴视图 -->
-<div id="note-timeline" class="timeline"></div>
+    <header class="notes-title-row">
+      <div>
+        <h1>笔记</h1>
+        <p class="notes-sub">共 {{ stats.total }} 篇 · {{ stats.roots }} 个顶层主题 · {{ stats.encrypted }} 篇加密</p>
+      </div>
+      <a href="{{ url_for('note_new') }}" class="btn-ink" id="noteNewBtn">
+        <svg class="icon"><use href="#i-plus"/></svg>新建笔记
+      </a>
+    </header>
 
-<!-- 删除确认 Modal -->
-<div class="app-modal" id="noteDeleteModal">
-  <div class="app-modal-backdrop"></div>
-  <div class="app-modal-card narrow">
-    <div class="app-modal-header">
-      <h5 class="app-modal-title">确认删除</h5>
-      <button type="button" class="app-modal-close" data-modal-dismiss>&times;</button>
+    {% if recent or roots %}
+    <div class="notes-overview-grid{% if recent and roots %} is-split{% endif %}">
+    {% endif %}
+    {% if recent %}
+    <section class="notes-section" aria-labelledby="recentNotesTitle">
+      <div class="notes-section-head">
+        <h2 id="recentNotesTitle">最近更新</h2>
+        <span class="notes-section-meta">按修改时间</span>
+      </div>
+      <div class="note-index">
+        {% for note in recent %}
+        <a class="note-index-row" href="{{ url_for('note_view', keyid=note.id) }}">
+          <span class="note-index-main">
+            <span class="note-index-title">
+              {{ note.name }}
+              {% if note.encrypted %}<svg class="icon note-inline-lock" aria-label="加密笔记"><use href="#i-lock"/></svg>{% endif %}
+            </span>
+            <span class="note-index-path">
+              {% if note.path %}{{ note.path | join(' / ') }}{% else %}顶层笔记{% endif %}
+              <span class="notes-dot">·</span>第 {{ note.depth + 1 }} 层
+            </span>
+          </span>
+          <span class="note-index-side">
+            {% if note.descendant_count %}
+            <span>{{ note.descendant_count }} 篇子笔记</span>
+            {% endif %}
+            <time datetime="{{ note.updated }}">{{ note.updated[:10] if note.updated else '—' }}</time>
+            <svg class="icon note-row-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if roots %}
+    <section class="notes-section" aria-labelledby="rootNotesTitle">
+      <div class="notes-section-head">
+        <h2 id="rootNotesTitle">顶层主题</h2>
+        <span class="notes-section-meta">{{ roots | length }} 个</span>
+      </div>
+      <div class="note-root-list">
+        {% for note in roots %}
+        <a class="note-root-row" href="{{ url_for('note_view', keyid=note.id) }}">
+          <span class="note-root-mark" aria-hidden="true"></span>
+          <span class="note-root-main">
+            <span class="note-root-name">
+              {{ note.name }}
+              {% if note.encrypted %}<svg class="icon note-inline-lock" aria-label="加密笔记"><use href="#i-lock"/></svg>{% endif %}
+            </span>
+            <span class="note-root-meta">
+              {% if note.children %}
+                {{ note.descendant_count }} 篇子笔记
+                <span class="notes-dot">·</span>
+                {% for child in note.children[:2] %}{{ child.name }}{% if not loop.last %}、{% endif %}{% endfor %}{% if note.children | length > 2 %} 等{% endif %}
+              {% else %}
+                暂无子笔记
+              {% endif %}
+            </span>
+          </span>
+          <span class="note-root-side">
+            <time datetime="{{ note.updated }}">{{ note.updated[:10] if note.updated else '—' }}</time>
+            <svg class="icon note-row-arrow" aria-hidden="true"><use href="#i-arrow-right"/></svg>
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    {% if recent or roots %}</div>{% endif %}
+
+    {% if not recent %}
+    <div class="notes-empty">
+      <h2>从一篇笔记开始</h2>
+      <p>笔记可以层层展开，最多三层子笔记。先写下第一行。</p>
+      <a href="{{ url_for('note_new') }}" class="btn-ink">新建第一篇笔记</a>
     </div>
-    <div class="app-modal-body" style="color:var(--text-muted)">删除后无法恢复，确认继续？</div>
-    <div class="app-modal-footer">
-      <button type="button" class="btn-ghost" data-modal-dismiss>取消</button>
-      <button type="button" class="btn-danger" id="confirmNoteDeleteBtn">删除</button>
-    </div>
-  </div>
+    {% endif %}
+  </main>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-  // ── Delete ────────────────────────────────────────────────────────────────
-  let noteDeleteModal = null;
-  let deleteNoteKeyID = null;
-
-  function confirmNoteDelete(keyid) {
-    deleteNoteKeyID = keyid;
-    if (!noteDeleteModal)
-      noteDeleteModal = UI.modal('noteDeleteModal');
-    noteDeleteModal.show();
-  }
-
-  document.getElementById('confirmNoteDeleteBtn').addEventListener('click', function () {
-    fetch('/note/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ KeyID: deleteNoteKeyID })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.code === 1) {
-        noteDeleteModal.hide();
-        // 简单刷新：确保列表和时间轴视图都正确更新
-        window.location.reload();
-      }
-    });
-  });
-
-  // ── Timeline ──────────────────────────────────────────────────────────────
-  const NOTE_DATA = {{ note_data | tojson }};
-
-  function escHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function buildNoteTimeline() {
-    const container = document.getElementById('note-timeline');
-    container.innerHTML = '';
-
-    const sorted = NOTE_DATA.slice().sort(function (a, b) {
-      return (b.AddTime || '').localeCompare(a.AddTime || '');
-    });
-
-    if (sorted.length === 0) {
-      container.innerHTML =
-        '<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#i-note"/></svg></div><div>还没有笔记</div></div>';
-      return;
-    }
-
-    var currentYear = null;
-
-    sorted.forEach(function (item, index) {
-      var date  = item.AddTime ? item.AddTime.slice(0, 10) : '';
-      var year  = date.slice(0, 4);
-      var month = parseInt(date.slice(5, 7), 10);
-      var day   = parseInt(date.slice(8, 10), 10);
-      var isLast = index === sorted.length - 1;
-
-      if (year && year !== currentYear) {
-        currentYear = year;
-        var yearEl = document.createElement('div');
-        yearEl.className = 'timeline-year-label';
-        yearEl.innerHTML =
-          '<span class="tl-dot"></span><span class="tl-year">' + escHtml(year) + '</span>';
-        container.appendChild(yearEl);
-      }
-
-      var itemEl = document.createElement('div');
-      itemEl.className = 'timeline-item';
-      itemEl.id = 'tl-note-' + item.KeyID;
-      itemEl.innerHTML =
-        '<div class="timeline-spine">' +
-          '<div class="timeline-date"><span class="tl-day">' + day + '</span> ' + month + '月</div>' +
-          '<div class="timeline-dot green"></div>' +
-          (isLast ? '' : '<div class="timeline-line green"></div>') +
-        '</div>' +
-        '<div class="timeline-body">' +
-          '<div class="timeline-card">' +
-            '<div class="timeline-card-title">' + (item.IsEncrypted ? '<svg class="icon"><use href="#i-lock"/></svg>' : '') + escHtml(item.Name) + '</div>' +
-            '<div class="timeline-card-meta">' +
-              '<span>' + escHtml(item.AddPerson || '') + '</span>' +
-              '<span>·</span>' +
-              '<span>' + escHtml(item.ProductTypeRemark || '') + '</span>' +
-              '<a class="tl-view-link" href="/notes/' + encodeURIComponent(item.Path) + '">查看' +
-                 '<svg class="icon"><use href="#i-arrow-right"/></svg></a>' +
-              '<button class="tl-del" onclick="confirmNoteDelete(\'' + escHtml(item.KeyID) + '\')" title="删除" aria-label="删除">' +
-                 '<svg class="icon"><use href="#i-trash"/></svg></button>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      container.appendChild(itemEl);
-    });
-    if (window.UI_revealStagger)
-      UI_revealStagger(container.querySelectorAll('.timeline-item'));
-  }
-
-  function switchNoteView(view) {
-    var listEl     = document.getElementById('note-list-view');
-    var timelineEl = document.getElementById('note-timeline');
-    document.querySelectorAll('.view-btn').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.view === view);
-    });
-    if (view === 'timeline') {
-      listEl.style.display = 'none';
-      timelineEl.classList.add('visible');
-      if (!timelineEl.dataset.built) {
-        buildNoteTimeline();
-        timelineEl.dataset.built = '1';
-      }
-    } else {
-      listEl.style.display = '';
-      timelineEl.classList.remove('visible');
-    }
-    localStorage.setItem('note_view', view);
-  }
-
-  // 默认时间轴视图，用户切换后记住偏好
-  (function () {
-    var saved = localStorage.getItem('note_view');
-    if (!saved || saved === 'timeline') switchNoteView('timeline');
-    else switchNoteView('list');
-  })();
-</script>
+<script src="{{ url_for('static', filename='js/notes.js') }}"></script>
 {% endblock %}

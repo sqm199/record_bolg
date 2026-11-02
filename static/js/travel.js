@@ -521,6 +521,68 @@ window.Travel = (function () {
       });
   }
 
+  // ── 导出 Word ────────────────────────────────────────────────────────────
+  function safeFilename(name) {
+    var chars = ['/', ':', '*', '?', '"', '<', '>', '|', String.fromCharCode(92)];
+    var out = String(name || '旅行计划');
+    chars.forEach(function (ch) { out = out.split(ch).join('_'); });
+    return out.trim() || '旅行计划';
+  }
+
+  function exportWord() {
+    if (!plan) return;
+    collectMeta();
+    if (!plan.Name) { UI.toast('请填写计划名称', 'error'); return; }
+    if (plan.Spots.length < 2) { UI.toast('至少需要起点和终点', 'error'); return; }
+    for (var i = 0; i < plan.Spots.length; i++) {
+      var s = plan.Spots[i];
+      if (!s.Name.trim()) { UI.toast('第 ' + (i + 1) + ' 个地点名称为空', 'error'); return; }
+      if (!s.LngLat) { UI.toast('第 ' + (i + 1) + ' 个地点「' + s.Name + '」尚未定位', 'error'); return; }
+    }
+
+    var legs = plan.Legs.map(function (l) {
+      return { FromIndex: l.FromIndex, ToIndex: l.ToIndex,
+               Distance: l.Distance, Duration: l.Duration, CachedAt: l.CachedAt };
+    }).filter(function (l) { return l.Distance != null; });
+
+    var btn = document.getElementById('exportWordBtn');
+    var original = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = '导出中…';
+    function restore() { btn.disabled = false; btn.innerHTML = original; }
+
+    fetch('/travel/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        KeyID: plan.KeyID, Name: plan.Name, Date: plan.Date, Note: plan.Note,
+        Spots: plan.Spots, Legs: legs
+      })
+    })
+      .then(function (r) {
+        if (r.ok) return r.blob();
+        return r.json().catch(function () { return {}; }).then(function (data) {
+          throw new Error(data.msgs || '导出失败');
+        });
+      })
+      .then(function (blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = safeFilename(plan.Name) + '.docx';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+        UI.toast('Word 已导出', 'success');
+        restore();
+      })
+      .catch(function (err) {
+        UI.toast(err && err.message ? err.message : '网络错误，请重试', 'error');
+        restore();
+      });
+  }
+
   function askDelete(keyid) {
     deleteKeyID = keyid;
     UI.modal('travelDeleteModal').show();
@@ -583,6 +645,7 @@ window.Travel = (function () {
     locateMe: locateMe,
     recompute: recompute,
     savePlan: savePlan,
+    exportWord: exportWord,
     askDelete: askDelete
   };
 })();

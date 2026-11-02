@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory, jsonify
+from flask import Flask, redirect, url_for, render_template, session, request, send_from_directory, send_file, jsonify
 from werkzeug.utils import secure_filename
+from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 from Module import MPhotoInfo, MnoteInfo, MTravelInfo
-from Module.MTexasPoker import get_game
 from Sqls import storage
 import markdown
 import html as html_module
@@ -37,6 +37,7 @@ app.secret_key = _secret
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['NOTE_PATH']     = NOTE_PATH
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+app.jinja_env.globals['NOTE_MAX_CHILD_DEPTH'] = MnoteInfo.MAX_CHILD_DEPTH
 
 ADMIN_ACCOUNT  = os.environ.get("ADMIN_ACCOUNT", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
@@ -237,222 +238,444 @@ def upload_file():
 
 # ── Note ───────────────────────────────────────────────────────────────────
 
+def _note_state():
+    """一次性读取并整理笔记数据，供各个笔记页面复用。"""
+    raw = storage.load('noteinfo')
+    active, by_id = MnoteInfo.load_active(raw)
+    unlocked = session.get('unlocked_notes', [])
+    tree = MnoteInfo.build_tree(active, by_id, unlocked)
+    return raw, active, by_id, tree, unlocked
+
+
+def _note_stats(active, tree):
+    return {
+        "total": len(active),
+        "roots": len(tree),
+        "encrypted": sum(1 for r in active if r.get("IsEncrypted")),
+    }
+
+
+def _public_note(record, by_id, unlocked):
+    """模板可见的笔记字段，绝不包含 PasswordHash。"""
+    key_id = record.get("KeyID", "")
+    locked = bool(record.get("IsEncrypted")) and key_id not in set(unlocked)
+    return {
+        "KeyID": key_id,
+        "Name": record.get("Name") or "",
+        "ParentID": record.get("ParentID") or "",
+        "Path": record.get("Path") or "",
+        "Content": "" if locked else (record.get("Content") or ""),
+        "IsEncrypted": int(bool(record.get("IsEncrypted"))),
+        "Locked": locked,
+        "HasPassword": bool(record.get("PasswordHash")),
+        "AddTime": record.get("AddTime") or "",
+        "ModifyTime": record.get("ModifyTime") or "",
+        "AddPerson": record.get("AddPerson") or "",
+        "Depth": MnoteInfo.note_depth(record, by_id),
+    }
+
+
+def _legacy_note_html(record):
+    """老笔记没有 Content 时，回退读取 note/ 目录里的静态 HTML。"""
+    safe_fn = secure_filename(record.get("Path") or "")
+    if not safe_fn:
+        return '<p class="note-missing-file">笔记文件不存在</p>'
+    filepath = os.path.join(app.config['NOTE_PATH'], safe_fn + '.html')
+    if not os.path.exists(filepath):
+        return '<p class="note-missing-file">笔记文件不存在</p>'
+    with open(filepath, encoding='utf-8') as f:
+        raw = f.read()
+    match = re.search(r'<body[^>]*>(.*?)</body>', raw, re.DOTALL)
+    return match.group(1).strip() if match else raw
+
+
+def _next_sort_order(active, parent_id):
+    orders = []
+    for record in active:
+        if (record.get("ParentID") or "") == (parent_id or ""):
+            try:
+                orders.append(int(record.get("SortOrder") or 0))
+            except (TypeError, ValueError):
+                pass
+    return (max(orders) if orders else 0) + 1
+
+
+def _siblings(record, active):
+    parent_id = record.get("ParentID") or ""
+    same = [r for r in active if (r.get("ParentID") or "") == parent_id]
+    same.sort(key=lambda r: (
+        int(r.get("SortOrder") or 0) if str(r.get("SortOrder") or "0").lstrip("-").isdigit() else 0,
+        r.get("AddTime") or "",
+        (r.get("Name") or "").lower(),
+    ))
+    ids = [r.get("KeyID") for r in same]
+    try:
+        index = ids.index(record.get("KeyID"))
+    except ValueError:
+        return None, None
+    prev = same[index - 1] if index > 0 else None
+    nxt = same[index + 1] if index + 1 < len(same) else None
+    return prev, nxt
+
+
+def _link_notes(tree):
+    return [
+        {"id": node["id"], "name": node["name"], "path": node["path"], "depth": node["depth"]}
+        for node in MnoteInfo.flatten_tree(tree)
+    ]
+
+
 @app.route('/note')
 def note():
     if not login_cat():
         return redirect(url_for('login'))
-    records = [r for r in storage.load('noteinfo') if not r.get('IsDelete')]
-    value_list = []
-    for item in records:
-        n = MnoteInfo.Note()
-        n.KeyID     = item['KeyID']
-        n.Name      = item['Name']
-        n.ProductType = item.get('ProductType', 1)
-        n.AddPerson = item.get('AddPerson', '')
-        n.AddTime            = item.get('AddTime', '')
-        n.Path               = item.get('Path', item['Name'])
-        n.ProductTypeRemark  = item.get('ProductTypeRemark', '')
-        n.IsEncrypted        = item.get('IsEncrypted', 0)
-        value_list.append(n)
-    # 剔除 PasswordHash 后再输出到前端，避免哈希泄露
-    note_data = [{k: v for k, v in r.items() if k != 'PasswordHash'} for r in records]
-    return render_template('note.html', value=value_list, note_data=note_data)
+    raw, active, by_id, tree, unlocked = _note_state()
+    flat = MnoteInfo.flatten_tree(tree)
+    recent = sorted(flat, key=lambda n: n.get("updated") or "", reverse=True)[:6]
+    return render_template(
+        'note.html',
+        tree=tree,
+        roots=tree,
+        recent=recent,
+        stats=_note_stats(active, tree),
+        current_id="",
+        q="",
+    )
+
+
+@app.route('/note/view/<keyid>')
+def note_view(keyid):
+    if not login_cat():
+        return redirect(url_for('login'))
+    raw, active, by_id, tree, unlocked = _note_state()
+    record = by_id.get(keyid)
+    if not record:
+        return '笔记不存在', 404
+
+    node = MnoteInfo.find_node(tree, keyid)
+    item = _public_note(record, by_id, unlocked)
+    locked = item["Locked"]
+    if locked:
+        html_body, words, read_minutes = "", 0, 0
+    else:
+        content = record.get("Content") or ""
+        html_body = MnoteInfo.render_body(content, active) if content else _legacy_note_html(record)
+        words = MnoteInfo.word_count(content)
+        read_minutes = MnoteInfo.reading_minutes(words)
+
+    prev_record, next_record = _siblings(record, active)
+    lineage = [
+        {"id": r.get("KeyID"), "name": r.get("Name") or "未命名"}
+        for r in MnoteInfo.lineage(record, by_id)
+    ]
+    children = node["children"] if node else []
+    refs = [] if locked else MnoteInfo.backlinks(keyid, active, unlocked)
+    backlink_items = [
+        {"id": r.get("KeyID"), "name": r.get("Name") or "未命名",
+         "encrypted": bool(r.get("IsEncrypted"))}
+        for r in refs
+    ]
+    return render_template(
+        'note_detail.html',
+        item=item,
+        tree=tree,
+        lineage=lineage,
+        html_body=html_body,
+        locked=locked,
+        words=words,
+        read_minutes=read_minutes,
+        children=children,
+        backlinks=backlink_items,
+        descendant_count=node["descendant_count"] if node else 0,
+        parent_options=MnoteInfo.parent_options(active, by_id, exclude_id=keyid),
+        prev_note=prev_record,
+        next_note=next_record,
+        stats=_note_stats(active, tree),
+        current_id=keyid,
+        q="",
+    )
 
 
 @app.route('/note/new')
 def note_new():
     if not login_cat():
         return redirect(url_for('login'))
-    return render_template('note_editor.html')
+    raw, active, by_id, tree, unlocked = _note_state()
+    parent_id = (request.args.get('parent') or '').strip()
+    parent = by_id.get(parent_id)
+    if parent_id and (not parent or MnoteInfo.note_depth(parent, by_id) >= MnoteInfo.MAX_CHILD_DEPTH):
+        parent_id = ""
+    return render_template(
+        'note_editor.html',
+        mode='new',
+        note={
+            "KeyID": "",
+            "Name": "",
+            "Content": "",
+            "ParentID": parent_id,
+            "IsEncrypted": 0,
+            "HasPassword": False,
+        },
+        parent_options=MnoteInfo.parent_options(active, by_id),
+        link_notes=_link_notes(tree),
+        cancel_url=url_for('note_view', keyid=parent_id) if parent_id else url_for('note'),
+        stats=_note_stats(active, tree),
+    )
+
+
+@app.route('/note/<keyid>/edit')
+def note_edit(keyid):
+    if not login_cat():
+        return redirect(url_for('login'))
+    raw, active, by_id, tree, unlocked = _note_state()
+    record = by_id.get(keyid)
+    if not record:
+        return '笔记不存在', 404
+    item = _public_note(record, by_id, unlocked)
+    if item["Locked"]:
+        return redirect(url_for('note_view', keyid=keyid))
+    return render_template(
+        'note_editor.html',
+        mode='edit',
+        note=item,
+        parent_options=MnoteInfo.parent_options(active, by_id, exclude_id=keyid),
+        link_notes=[
+            n for n in _link_notes(tree) if n["id"] != keyid
+        ],
+        cancel_url=url_for('note_view', keyid=keyid),
+        stats=_note_stats(active, tree),
+    )
 
 
 @app.route('/note/save', methods=['POST'])
 def note_save():
     if not login_cat():
-        return '{"code":0,"msgs":"未登录"}'
-    title   = request.form.get('title', '').strip()
-    content = request.form.get('content', '')
+        return jsonify({"code": 0, "msgs": "未登录"})
+    raw, active, by_id, tree, unlocked = _note_state()
+    title, content, error = MnoteInfo.normalize_content_limits(
+        request.form.get('title', ''), request.form.get('content', '')
+    )
+    if error:
+        return jsonify({"code": 0, "msgs": error})
+
+    parent_id = (request.form.get('parent_id') or '').strip()
+    parent, depth, error = MnoteInfo.validate_parent(parent_id, active, by_id)
+    if error:
+        return jsonify({"code": 0, "msgs": error})
+
     is_encrypted = request.form.get('is_encrypted') == '1'
-    password     = request.form.get('password', '')
-    if not title:
-        return '{"code":0,"msgs":"标题不能为空"}'
+    password = request.form.get('password', '')
     if is_encrypted and not password:
-        return '{"code":0,"msgs":"加密笔记必须设置密码"}'
-    # 中文等非 ASCII 标题经 secure_filename 后会变为空串，此时用 KeyID 作为文件名兜底
+        return jsonify({"code": 0, "msgs": "加密笔记必须设置密码"})
+
     key_id = mark_keyid()
-    safe_title = secure_filename(title) or key_id
-    escaped_title = html_module.escape(title)
-
-    filepath = os.path.join(app.config['NOTE_PATH'], f'{safe_title}.html')
-    if os.path.exists(filepath):
-        return '{"code":0,"msgs":"同名笔记已存在，请使用不同标题"}'
-
-    html_body = markdown.markdown(content, extensions=['extra'])
-    full_html = f"""<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>{escaped_title}</title>
-  <style>
-    body{{font-family:'Noto Sans SC',sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.8}}
-    img{{max-width:100%}}
-    pre{{background:#f5f5f5;padding:1rem;border-radius:4px;overflow-x:auto}}
-    code{{background:#f5f5f5;padding:.1rem .3rem;border-radius:3px;font-size:.9em}}
-    blockquote{{border-left:4px solid #ddd;margin:0;padding-left:1rem;color:#555}}
-  </style>
-</head>
-<body>
-  <h1>{escaped_title}</h1>
-  {html_body}
-</body>
-</html>"""
-
-    os.makedirs(app.config['NOTE_PATH'], exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(full_html)
+    while any(r.get('KeyID') == key_id for r in raw):
+        key_id = mark_keyid()
 
     now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     record = {
-        "KeyID":             key_id,
-        "Name":              title,
-        "ProductType":       1,
+        "KeyID": key_id,
+        "Name": title,
+        "ParentID": parent_id,
+        "SortOrder": _next_sort_order(active, parent_id),
+        "ProductType": 1,
         "ProductTypeRemark": "公开区",
-        "Path":              safe_title,
-        "Content":           content,
-        "Remark":            "",
-        "IsEncrypted":       1 if is_encrypted else 0,
-        "PasswordHash":      generate_password_hash(password) if is_encrypted else "",
-        "IsDelete":          0,
-        "AddTime":           now,
-        "AddPerson":         session.get("username", "admin"),
-        "ModifyTime":        now
+        "Path": key_id,
+        "Remark": "",
+        "Content": content,
+        "IsEncrypted": 1 if is_encrypted else 0,
+        "PasswordHash": generate_password_hash(password) if is_encrypted else "",
+        "IsDelete": 0,
+        "AddTime": now,
+        "AddPerson": session.get("username", "admin"),
+        "ModifyTime": now,
     }
-    records = storage.load('noteinfo')
-    records.append(record)
-    storage.save('noteinfo', records)
-    return '{"code":1,"msgs":"保存成功"}'
-
-
-@app.route('/note/delete', methods=['POST'])
-def note_delete():
-    if not login_cat():
-        return '{"code":0,"msgs":"未登录"}'
-    key_id = request.form.get('KeyID')
-    if not key_id:
-        return '{"code":0,"msgs":"缺少KeyID"}'
-    records = storage.load('noteinfo')
-    for r in records:
-        if r['KeyID'] == key_id:
-            r['IsDelete'] = 1
-    storage.save('noteinfo', records)
-    return '{"code":1,"msgs":"删除成功"}'
-
-
-@app.route('/notes/<filename>')
-def cat_notes_file(filename):
-    if not login_cat():
-        return redirect(url_for('login'))
-    records = storage.load('noteinfo')
-    item = next(
-        (r for r in records if r.get('Path') == filename and r.get('IsDelete', 0) == 0),
-        None
-    )
-    if not item:
-        return '笔记不存在', 404
-    # 加密笔记：未在本次 session 内解锁则显示锁屏页
-    if item.get('IsEncrypted') and item['KeyID'] not in session.get('unlocked_notes', []):
-        return render_template('note_locked.html', item=item)
-    content = item.get('Content', '')
-    if content:
-        html_body = markdown.markdown(content, extensions=['extra'])
-    else:
-        safe_fn   = secure_filename(filename)
-        filepath  = os.path.join(app.config['NOTE_PATH'], safe_fn + '.html')
-        if os.path.exists(filepath):
-            with open(filepath, encoding='utf-8') as f:
-                raw = f.read()
-            m = re.search(r'<body[^>]*>(.*?)</body>', raw, re.DOTALL)
-            html_body = m.group(1).strip() if m else raw
-        else:
-            html_body = '<p style="color:var(--text-muted)">笔记文件不存在</p>'
-    return render_template('note_detail.html', item=item, html_body=html_body)
-
-
-@app.route('/note/unlock', methods=['POST'])
-def note_unlock():
-    if not login_cat():
-        return '{"code":0,"msgs":"未登录"}'
-    key_id   = request.form.get('KeyID', '').strip()
-    password = request.form.get('password', '')
-    if not key_id:
-        return '{"code":0,"msgs":"缺少KeyID"}'
-    records = storage.load('noteinfo')
-    record = next(
-        (r for r in records if r['KeyID'] == key_id and r.get('IsDelete', 0) == 0),
-        None
-    )
-    if not record or not record.get('IsEncrypted'):
-        return '{"code":0,"msgs":"笔记不存在"}'
-    if not check_password_hash(record.get('PasswordHash', ''), password):
-        return '{"code":0,"msgs":"密码错误"}'
-    unlocked = session.get('unlocked_notes', [])
-    if key_id not in unlocked:
-        unlocked = unlocked + [key_id]
-        session['unlocked_notes'] = unlocked
-    return '{"code":1,"msgs":"解锁成功"}'
+    raw.append(record)
+    storage.save('noteinfo', raw)
+    return jsonify({"code": 1, "msgs": "保存成功", "keyid": key_id})
 
 
 @app.route('/note/update', methods=['POST'])
 def note_update():
     if not login_cat():
-        return '{"code":0,"msgs":"未登录"}'
-    key_id  = request.form.get('KeyID', '').strip()
-    title   = request.form.get('title', '').strip()
-    content = request.form.get('content', '')
-    if not key_id or not title:
-        return '{"code":0,"msgs":"参数缺失"}'
-    escaped_title = html_module.escape(title)
-    records = storage.load('noteinfo')
-    record = next(
-        (r for r in records if r['KeyID'] == key_id and r.get('IsDelete', 0) == 0),
-        None
-    )
+        return jsonify({"code": 0, "msgs": "未登录"})
+    key_id = (request.form.get('KeyID') or '').strip()
+    if not key_id:
+        return jsonify({"code": 0, "msgs": "缺少 KeyID"})
+
+    raw, active, by_id, tree, unlocked = _note_state()
+    record = by_id.get(key_id)
     if not record:
-        return '{"code":0,"msgs":"笔记不存在"}'
-    path = record.get('Path')
-    if not path:
-        return '{"code":0,"msgs":"笔记路径缺失，无法保存"}'
-    html_body = markdown.markdown(content, extensions=['extra'])
-    full_html = f"""<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>{escaped_title}</title>
-  <style>
-    body{{font-family:'Noto Sans SC',sans-serif;max-width:800px;margin:2rem auto;padding:0 1rem;color:#222;line-height:1.8}}
-    img{{max-width:100%}}
-    pre{{background:#f5f5f5;padding:1rem;border-radius:4px;overflow-x:auto}}
-    code{{background:#f5f5f5;padding:.1rem .3rem;border-radius:3px;font-size:.9em}}
-    blockquote{{border-left:4px solid #ddd;margin:0;padding-left:1rem;color:#555}}
-  </style>
-</head>
-<body>
-  <h1>{escaped_title}</h1>
-  {html_body}
-</body>
-</html>"""
-    filepath = os.path.join(app.config['NOTE_PATH'], path + '.html')
-    os.makedirs(app.config['NOTE_PATH'], exist_ok=True)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(full_html)
+        return jsonify({"code": 0, "msgs": "笔记不存在"})
+    if record.get("IsEncrypted") and key_id not in set(unlocked):
+        return jsonify({"code": 0, "msgs": "请先解锁笔记再编辑"})
+
+    title, content, error = MnoteInfo.normalize_content_limits(
+        request.form.get('title', ''), request.form.get('content', '')
+    )
+    if error:
+        return jsonify({"code": 0, "msgs": error})
+
+    old_parent = record.get("ParentID") or ""
+    parent_id = (request.form.get('parent_id') or '').strip()
+    parent, depth, error = MnoteInfo.validate_parent(parent_id, active, by_id, moving_id=key_id)
+    if error:
+        return jsonify({"code": 0, "msgs": error})
+
+    raw_enc = request.form.get('is_encrypted')
+    if raw_enc is None:
+        is_encrypted = bool(record.get("IsEncrypted"))
+    else:
+        is_encrypted = raw_enc == '1'
+    password = request.form.get('password', '')
+
+    if is_encrypted:
+        if password:
+            record["PasswordHash"] = generate_password_hash(password)
+        elif not record.get("PasswordHash"):
+            return jsonify({"code": 0, "msgs": "加密笔记必须设置密码"})
+    else:
+        record["PasswordHash"] = ""
+
+    record["Name"] = title
+    record["Content"] = content
+    record["IsEncrypted"] = 1 if is_encrypted else 0
+    record["ParentID"] = parent_id
+    if parent_id != old_parent:
+        record["SortOrder"] = _next_sort_order(active, parent_id)
+    record["ModifyTime"] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+    if not is_encrypted:
+        session['unlocked_notes'] = [x for x in unlocked if x != key_id]
+
+    storage.save('noteinfo', raw)
+    return jsonify({"code": 1, "msgs": "保存成功", "keyid": key_id})
+
+
+@app.route('/note/move', methods=['POST'])
+def note_move():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    key_id = (request.form.get('KeyID') or '').strip()
+    parent_id = (request.form.get('parent_id') or '').strip()
+    if not key_id:
+        return jsonify({"code": 0, "msgs": "缺少 KeyID"})
+
+    raw, active, by_id, tree, unlocked = _note_state()
+    record = by_id.get(key_id)
+    if not record:
+        return jsonify({"code": 0, "msgs": "笔记不存在"})
+    if record.get("IsEncrypted") and key_id not in set(unlocked):
+        return jsonify({"code": 0, "msgs": "请先解锁笔记再移动"})
+    parent, depth, error = MnoteInfo.validate_parent(parent_id, active, by_id, moving_id=key_id)
+    if error:
+        return jsonify({"code": 0, "msgs": error})
+
+    old_parent = record.get("ParentID") or ""
+    if parent_id != old_parent:
+        record["ParentID"] = parent_id
+        record["SortOrder"] = _next_sort_order(active, parent_id)
+        record["ModifyTime"] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+        storage.save('noteinfo', raw)
+    return jsonify({
+        "code": 1,
+        "msgs": "已移动",
+        "redirect": url_for('note_view', keyid=key_id),
+    })
+
+
+@app.route('/note/delete', methods=['POST'])
+def note_delete():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    key_id = (request.form.get('KeyID') or '').strip()
+    if not key_id:
+        return jsonify({"code": 0, "msgs": "缺少 KeyID"})
+
+    raw = storage.load('noteinfo')
+    active, by_id = MnoteInfo.load_active(raw)
+    record = by_id.get(key_id)
+    if not record:
+        return jsonify({"code": 0, "msgs": "笔记不存在"})
+    unlocked = session.get('unlocked_notes', [])
+    if record.get("IsEncrypted") and key_id not in set(unlocked):
+        return jsonify({"code": 0, "msgs": "请先解锁笔记再删除"})
+
+    mode = request.form.get('mode', 'detach')
+    direct_children = [r for r in active if (r.get("ParentID") or "") == key_id]
+    all_descendants = MnoteInfo.descendants(key_id, active)
     now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    record['Name']       = title
-    record['Content']    = content
-    record['ModifyTime'] = now
-    storage.save('noteinfo', records)
-    return '{"code":1,"msgs":"保存成功"}'
+    parent_id = record.get("ParentID") or ""
+
+    if mode == 'subtree':
+        for item in [record] + all_descendants:
+            item["IsDelete"] = 1
+            item["ModifyTime"] = now
+    else:
+        # 只把直接子笔记上移，更深层的结构保持不动。
+        for child in direct_children:
+            child["ParentID"] = parent_id
+            child["ModifyTime"] = now
+        record["IsDelete"] = 1
+        record["ModifyTime"] = now
+
+    storage.save('noteinfo', raw)
+    redirect_to = url_for('note_view', keyid=parent_id) if parent_id else url_for('note')
+    return jsonify({
+        "code": 1,
+        "msgs": "删除成功",
+        "count": len(all_descendants) if mode == 'subtree' else len(direct_children),
+        "redirect": redirect_to,
+    })
+
+
+@app.route('/note/search')
+def note_search():
+    if not login_cat():
+        return redirect(url_for('login'))
+    query = (request.args.get('q') or '').strip()[:80]
+    raw, active, by_id, tree, unlocked = _note_state()
+    results = MnoteInfo.search(active, by_id, query, unlocked)
+    return render_template(
+        'note_search.html',
+        q=query,
+        results=results,
+        tree=tree,
+        roots=tree,
+        stats=_note_stats(active, tree),
+        current_id="",
+    )
+
+
+@app.route('/notes/<filename>')
+def cat_notes_file(filename):
+    """兼容旧链接：按 Path 找到笔记后跳到新的 KeyID 阅读地址。"""
+    if not login_cat():
+        return redirect(url_for('login'))
+    raw, active, by_id, tree, unlocked = _note_state()
+    item = next((r for r in active if r.get('Path') == filename), None)
+    if not item:
+        return '笔记不存在', 404
+    return redirect(url_for('note_view', keyid=item.get('KeyID')))
+
+
+@app.route('/note/unlock', methods=['POST'])
+def note_unlock():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"})
+    key_id = (request.form.get('KeyID') or '').strip()
+    password = request.form.get('password', '')
+    if not key_id:
+        return jsonify({"code": 0, "msgs": "缺少 KeyID"})
+    raw, active, by_id, tree, unlocked = _note_state()
+    record = by_id.get(key_id)
+    if not record or not record.get('IsEncrypted'):
+        return jsonify({"code": 0, "msgs": "笔记不存在"})
+    if not check_password_hash(record.get('PasswordHash', ''), password):
+        return jsonify({"code": 0, "msgs": "密码错误"})
+    if key_id not in unlocked:
+        session['unlocked_notes'] = unlocked + [key_id]
+    return jsonify({"code": 1, "msgs": "解锁成功"})
 
 
 # ── Movie ──────────────────────────────────────────────────────────────────
@@ -645,6 +868,54 @@ def travel():
                            amap_key=AMAP_KEY, amap_security=AMAP_SECURITY)
 
 
+def _travel_download_name(plan):
+    raw_name = " ".join((plan.get("Name") or "旅行计划").split()) or "旅行计划"
+    for ch in ("/", ":", "*", "?", '"', "<", ">", "|", chr(92)):
+        raw_name = raw_name.replace(ch, "_")
+    name = raw_name.strip(" ._") or "旅行计划"
+    date = str(plan.get("Date") or "").strip()
+    if not re.match("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", date):
+        date = time.strftime('%Y-%m-%d', time.localtime())
+    return f"{name}_{date}.docx"
+
+
+def _travel_word_response(plan):
+    try:
+        from Module.travel_export import build_travel_docx
+    except ImportError:
+        return jsonify({"code": 0, "msgs": "Word 导出组件未安装，请先执行 uv sync"}), 500
+    data = build_travel_docx(plan)
+    return send_file(
+        BytesIO(data),
+        as_attachment=True,
+        download_name=_travel_download_name(plan),
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    )
+
+
+@app.route('/travel/export/<key_id>')
+def travel_export(key_id):
+    if not login_cat():
+        return redirect(url_for('login'))
+    for record in storage.load('travelinfo'):
+        if record.get('KeyID') == key_id and not record.get('IsDelete'):
+            return _travel_word_response(record)
+    return '计划不存在', 404
+
+
+@app.route('/travel/export', methods=['POST'])
+def travel_export_current():
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录"}), 401
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"code": 0, "msgs": "请求格式错误"}), 400
+    err = _validate_plan(data)
+    if err:
+        return jsonify({"code": 0, "msgs": err}), 400
+    return _travel_word_response(data)
+
+
 @app.route('/travel/detail/<key_id>')
 def travel_detail(key_id):
     if not login_cat():
@@ -735,52 +1006,6 @@ def travel_delete():
             storage.save('travelinfo', records)
             return jsonify({"code": 1})
     return jsonify({"code": 0, "msgs": "计划不存在"})
-
-
-# ── Game ────────────────────────────────────────────────────────────────────
-
-@app.route('/game')
-def game_index():
-    if not login_cat():
-        return redirect(url_for('login'))
-    return render_template('game.html')
-
-
-@app.route('/game/texas')
-def game_texas():
-    if not login_cat():
-        return redirect(url_for('login'))
-    return render_template('texas.html')
-
-
-@app.route('/api/texas/new', methods=['POST'])
-def api_texas_new():
-    if not login_cat():
-        return jsonify({"code": 0, "msgs": "未登录"})
-    game = get_game()
-    game.start_new_round()
-    return jsonify({"code": 1, "state": game.get_state()})
-
-
-@app.route('/api/texas/action', methods=['POST'])
-def api_texas_action():
-    if not login_cat():
-        return jsonify({"code": 0, "msgs": "未登录"})
-    game = get_game()
-    action = request.form.get('action', '')
-    amount = request.form.get('amount', type=int) or 0
-    result = game.player_action(action, amount)
-    if 'error' in result:
-        return jsonify({"code": 0, "msgs": result['error']})
-    return jsonify({"code": 1, "state": game.get_state()})
-
-
-@app.route('/api/texas/state', methods=['GET'])
-def api_texas_state():
-    if not login_cat():
-        return jsonify({"code": 0, "msgs": "未登录"})
-    game = get_game()
-    return jsonify({"code": 1, "state": game.get_state()})
 
 
 if __name__ == '__main__':
