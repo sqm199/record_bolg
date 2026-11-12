@@ -15,16 +15,76 @@ import html
 import re
 import time
 
+import bleach
 import markdown
 
 # 根节点之上最多还能挂 3 层子笔记，总深度 = 4 层。
 MAX_CHILD_DEPTH = 3
 
+CONTENT_FORMAT_MARKDOWN = "markdown"
+CONTENT_FORMAT_HTML = "html"
+
 _TITLE_MAX = 120
 _CONTENT_MAX = 500_000
 _WIKI_RE = re.compile(r"\[\[([^\[\]\n]{1,120})\]\]")
 _MD_LINK_RE = re.compile(r"\]\(/note/view/([A-Za-z0-9_\-]+)\)")
+_HTML_NOTE_LINK_RE = re.compile(r"""href=["']/note/view/([A-Za-z0-9_\-]+)""", re.I)
 _CODE_SPLIT_RE = re.compile(r"(```.*?```|`[^`\n]*`)", re.S)
+
+# 富文本只保留这些语义标签；样式、脚本、事件属性一律丢弃。
+_HTML_TAGS = {
+    "p", "br", "h1", "h2", "h3", "h4", "h5", "h6",
+    "strong", "b", "em", "i", "u", "s", "strike", "del",
+    "code", "pre", "ul", "ol", "li", "blockquote", "hr",
+    "a", "img", "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+    "colgroup", "col", "caption",
+}
+_HTML_ATTRS = {
+    "a": ["href", "title", "rel", "target"],
+    "img": ["src", "alt", "title", "width", "height"],
+    "th": ["colspan", "rowspan", "colwidth"],
+    "td": ["colspan", "rowspan", "colwidth"],
+    "col": ["span", "width"],
+    "colgroup": ["span"],
+    "pre": ["class"],
+    "code": ["class"],
+    "table": ["class"],
+}
+_HTML_PROTOCOLS = ["http", "https", "mailto"]
+
+
+def content_format(record):
+    """返回记录的正文格式；历史数据没有该字段时按 Markdown 处理。"""
+    fmt = str((record or {}).get("ContentFormat") or "").strip().lower()
+    return CONTENT_FORMAT_HTML if fmt == CONTENT_FORMAT_HTML else CONTENT_FORMAT_MARKDOWN
+
+
+def sanitize_html(content):
+    """富文本落库/展示前的白名单清洗。"""
+    content = re.sub(
+        r"<(script|style|iframe|object|embed|form|svg|math)\b[^>]*>.*?</\1\s*>",
+        "",
+        content or "",
+        flags=re.I | re.S,
+    )
+    return bleach.clean(
+        content,
+        tags=_HTML_TAGS,
+        attributes=_HTML_ATTRS,
+        protocols=_HTML_PROTOCOLS,
+        strip=True,
+        strip_comments=True,
+    )
+
+
+def html_is_empty(content):
+    """只有图片/表格/分割线等非文本块也算有内容。"""
+    raw = content or ""
+    if re.search(r"<(img|table|hr|pre|blockquote|ul|ol)\b", raw, re.I):
+        return False
+    text = re.sub(r"<[^>]+>", " ", raw)
+    text = html.unescape(text).replace(" ", " ")
+    return not text.strip()
 
 
 def _now() -> str:
@@ -34,7 +94,7 @@ def _now() -> str:
 class Note(object):
     def __init__(self, KeyID="", Name="", ParentID="", SortOrder=0, ProductType=1,
                  ProductTypeRemark="", Path="", Remark="", IsDelete=0,
-                 IsEncrypted=0, Content="", PasswordHash="",
+                 IsEncrypted=0, Content="", ContentFormat=CONTENT_FORMAT_MARKDOWN, PasswordHash="",
                  AddTime=None, AddPerson="sys", ModifyTime=None):
         now = _now()
         self.KeyID = KeyID
@@ -48,6 +108,7 @@ class Note(object):
         self.IsDelete = IsDelete
         self.IsEncrypted = IsEncrypted
         self.Content = Content
+        self.ContentFormat = content_format({"ContentFormat": ContentFormat})
         self.PasswordHash = PasswordHash
         self.AddTime = AddTime or now
         self.AddPerson = AddPerson
@@ -336,6 +397,11 @@ def backlinks(target_id, active, unlocked_ids=()):
         if source.get("IsEncrypted") and source_id not in unlocked:
             continue
         content = source.get("Content") or ""
+        if content_format(source) == CONTENT_FORMAT_HTML:
+            # 富文本里的站内链接直接是 <a href="/note/view/<id>">。
+            if target_id in _HTML_NOTE_LINK_RE.findall(content):
+                found.append(source)
+            continue
         hit = False
         parts = _CODE_SPLIT_RE.split(content)
         for index in range(0, len(parts), 2):
@@ -359,15 +425,29 @@ def render_body(content, active):
     return markdown.markdown(linked, extensions=["extra", "sane_lists"])
 
 
-def plain_text(content):
+def render_record_body(record, active):
+    """按记录的 ContentFormat 渲染正文。"""
+    content = record.get("Content") or ""
+    if content_format(record) == CONTENT_FORMAT_HTML:
+        return sanitize_html(content)
+    return render_body(content, active)
+
+
+def plain_text(content, fmt=CONTENT_FORMAT_MARKDOWN):
+    if fmt == CONTENT_FORMAT_HTML:
+        text = re.sub(r"<[^>]+>", " ", content or "")
+        return re.sub(r"\s+", " ", html.unescape(text)).strip()
     rendered = markdown.markdown(content or "", extensions=["extra", "sane_lists"])
     text = re.sub(r"<[^>]+>", " ", rendered)
     text = html.unescape(text)
     return re.sub(r"\s+", " ", text).strip()
 
 
-def word_count(content):
-    text = content or ""
+def word_count(content, fmt=CONTENT_FORMAT_MARKDOWN):
+    if fmt == CONTENT_FORMAT_HTML:
+        text = plain_text(content, fmt)
+    else:
+        text = content or ""
     chinese = len(re.findall(r"[㐀-鿿]", text))
     words = len(re.findall(r"[A-Za-z0-9_]+", text))
     return chinese + words
@@ -414,7 +494,9 @@ def search(active, by_id, query, unlocked_ids=()):
         name = record.get("Name") or ""
         locked = bool(record.get("IsEncrypted")) and rid not in unlocked
         title_hit = needle in name.lower()
-        body = "" if locked else plain_text(record.get("Content") or "")
+        body = "" if locked else plain_text(
+            record.get("Content") or "", content_format(record)
+        )
         content_hit = bool(body) and needle in body.lower()
         if not (title_hit or content_hit):
             continue

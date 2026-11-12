@@ -24,7 +24,7 @@ uv add <package-name>
 不依赖任何外部数据库。数据以 JSON 文件形式存储在 `data/` 目录下，首次写入时自动创建：
 
 - `data/photoinfo.json` — 照片记录
-- `data/noteinfo.json` — 笔记记录（平铺存储，`ParentID` 组织层级，`SortOrder` 控制同级顺序）
+- `data/noteinfo.json` — 笔记记录（平铺存储，`ParentID` 组织层级，`SortOrder` 控制同级顺序，`ContentFormat` 区分 `markdown` / `html` 正文）
 - `data/movieinfo.json` — 排行榜记录
 - `data/travelinfo.json` — 旅行计划（顶层为计划对象数组，每个计划内嵌 `Spots` 途经点与 `Legs` 分段行程缓存）
 
@@ -85,12 +85,17 @@ storage.save('photoinfo', records)
 
 - `GET /note` — 笔记库总览（目录树 + 最近更新 + 顶层主题）
 - `GET /note/view/<keyid>` — 阅读页；加密笔记未解锁时显示解锁面板
-- `GET /note/new`、`GET /note/<keyid>/edit` — 新建/编辑；编辑器支持 Markdown、草稿自动保存、位置选择、加密与站内链接
+- `GET /note/new`、`GET /note/<keyid>/edit` — 新建/编辑；默认打开富文本编辑器（`?editor=markdown` 打开 Markdown 编辑器）
 - `POST /note/save`、`POST /note/update`、`POST /note/move`、`POST /note/delete`、`POST /note/unlock`
+- `POST /note/preview` — Markdown 编辑器的实时预览（复用阅读页渲染）
 - `GET /note/search?q=` — 标题与正文全文搜索（加密且未解锁的正文不参与搜索）
 - `GET /notes/<filename>` — 兼容旧链接，按 `Path` 重定向到新阅读地址
 
-正文支持 `[[笔记标题]]` 或 `[[上级 / 子笔记]]` 站内引用（渲染时转换为 `/note/view/<keyid>`），阅读页右侧会列出引用本篇的其他笔记（`MnoteInfo.backlinks`，锁定笔记在解锁前不参与反链扫描）。删除父笔记时可选择“直接子笔记上移一层”或“连同全部后代一起软删除”。前端样式在 `static/CSS/notes.css`，交互在 `static/js/notes.js` 与 `static/js/note-editor.js`；`templates/_note_rail.html` / `_note_tree_macros.html` 为各笔记页共用的目录树。
+正文有两种存储格式，由 `ContentFormat` 区分：历史数据和 Markdown 编辑器写入 `markdown`，富文本编辑器写入 `html`（服务端用 `bleach` 白名单清洗）。阅读页通过 `MnoteInfo.render_record_body()` 按格式渲染；搜索、字数统计、反链扫描也都会识别格式。已有 Markdown 笔记从编辑页点“富文本”进入时，会先渲染成 HTML 供 TipTap 编辑，保存后正式转为 HTML；转换前会显示提示。
+
+富文本编辑器基于 TipTap（`@tiptap/*` 2.27.3），已打包为 `static/vendor/tiptap.js`，构建说明见 `static/vendor/README.md`；交互在 `static/js/note-editor-rich.js`，模板为 `templates/note_editor_rich.html`。它支持段落样式、选区浮条、`/` 插入菜单、`[[` 笔记联想、表格编辑、链接/图片弹窗、草稿、专注模式，以及 Markdown 模式切换。Markdown 编辑器仍在 `static/js/note-editor.js` 与 `templates/note_editor.html`。
+
+Markdown 正文支持 `[[笔记标题]]` 或 `[[上级 / 子笔记]]` 站内引用（渲染时转换为 `/note/view/<keyid>`）；富文本中的站内链接直接是 `<a href="/note/view/<keyid>">`。阅读页右侧会列出引用本篇的其他笔记（`MnoteInfo.backlinks`，锁定笔记在解锁前不参与反链扫描）。删除父笔记时可选择“直接子笔记上移一层”或“连同全部后代一起软删除”。前端样式在 `static/CSS/notes.css`，交互在 `static/js/notes.js`；`templates/_note_rail.html` / `_note_tree_macros.html` 为各笔记页共用的目录树。
 
 ### 旅行计划模块
 

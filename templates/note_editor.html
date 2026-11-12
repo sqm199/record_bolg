@@ -10,7 +10,6 @@
 <main class="notes-editor" id="notesEditor">
   <div class="editor-topbar">
     <div class="editor-heading">
-      <h1 class="editor-screen-title">{% if mode == 'edit' %}编辑笔记{% else %}新建笔记{% endif %}</h1>
       <nav class="note-lineage" aria-label="笔记层级">
         <a href="{{ url_for('note') }}">笔记</a>
         <svg class="icon note-lineage-sep" aria-hidden="true"><use href="#i-chevron-right"/></svg>
@@ -25,7 +24,14 @@
     </div>
 
     <div class="editor-actions">
-      <span class="editor-status" id="editorStatus" role="status">未修改</span>
+      <span class="editor-status" id="editorStatus" data-state="clean" role="status" aria-live="polite">
+        <span class="editor-status-dot" aria-hidden="true"></span>
+        <span id="editorStatusText">未修改</span>
+      </span>
+      {% if rich_url %}
+      <a href="{{ rich_url }}" class="btn-ghost" id="editorRichLink"
+         title="改用富文本编辑（保存后转换）">富文本</a>
+      {% endif %}
       <a href="{{ cancel_url }}" class="btn-ghost" id="editorCancelBtn">取消</a>
       <button type="button" class="btn-ink" id="editorSaveBtn">
         <svg class="icon"><use href="#i-check"/></svg>保存
@@ -47,30 +53,119 @@
              maxlength="120" autocomplete="off" spellcheck="false"
              {% if mode == 'new' %}autofocus{% endif %}>
 
-      <label class="sr-only" for="noteContent">正文</label>
-      <div class="editor-fallback-toolbar" id="editorFallbackToolbar" role="toolbar"
-           aria-label="Markdown 格式" hidden>
-        <button type="button" data-md="bold">粗体</button>
-        <button type="button" data-md="italic">斜体</button>
-        <button type="button" data-md="heading">标题</button>
-        <button type="button" data-md="list">列表</button>
-        <button type="button" data-md="quote">引用</button>
-        <button type="button" data-md="link">链接</button>
-        <button type="button" data-md="code">代码</button>
+      <div class="editor-shell" id="editorShell">
+        <div class="editor-toolbar" id="editorToolbar" role="toolbar" aria-label="格式工具栏">
+          <span class="editor-preview-badge">预览中</span>
+          <div class="editor-tb-group">
+            <button type="button" class="editor-tb-btn editor-tb-style" id="styleBtn"
+                    aria-haspopup="menu" aria-expanded="false" data-tip="段落样式">
+              <span id="styleLabel">正文</span>
+              <svg class="icon"><use href="#i-chevron-down"/></svg>
+            </button>
+          </div>
+
+          <span class="editor-tb-sep" aria-hidden="true"></span>
+
+          <div class="editor-tb-group">
+            <button type="button" class="editor-tb-btn" data-cmd="bold"
+                    data-tip="粗体 · Ctrl+B" aria-label="粗体" aria-pressed="false">
+              <svg class="icon"><use href="#i-bold"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="italic"
+                    data-tip="斜体 · Ctrl+I" aria-label="斜体" aria-pressed="false">
+              <svg class="icon"><use href="#i-italic"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="strike"
+                    data-tip="删除线" aria-label="删除线" aria-pressed="false">
+              <svg class="icon"><use href="#i-strikethrough"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="inlinecode"
+                    data-tip="行内代码" aria-label="行内代码" aria-pressed="false">
+              <svg class="icon"><use href="#i-code"/></svg>
+            </button>
+          </div>
+
+          <span class="editor-tb-sep" aria-hidden="true"></span>
+
+          <div class="editor-tb-group">
+            <button type="button" class="editor-tb-btn" data-cmd="link"
+                    data-tip="外部链接 · Ctrl+K" aria-label="插入链接">
+              <svg class="icon"><use href="#i-link"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" id="insertNoteLinkBtn" data-cmd="note-link"
+                    data-tip="链接到笔记" aria-label="链接到笔记">
+              <svg class="icon"><use href="#i-note"/></svg>
+            </button>
+          </div>
+
+          <span class="editor-tb-sep" aria-hidden="true"></span>
+
+          <div class="editor-tb-group">
+            <button type="button" class="editor-tb-btn" data-cmd="ul"
+                    data-tip="无序列表" aria-label="无序列表" aria-pressed="false">
+              <svg class="icon"><use href="#i-list"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="ol"
+                    data-tip="有序列表" aria-label="有序列表" aria-pressed="false">
+              <svg class="icon"><use href="#i-list-ordered"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="quote"
+                    data-tip="引用" aria-label="引用" aria-pressed="false">
+              <svg class="icon"><use href="#i-quote"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="codeblock"
+                    data-tip="代码块" aria-label="代码块">
+              <svg class="icon"><use href="#i-code-block"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="table"
+                    data-tip="表格" aria-label="插入表格">
+              <svg class="icon"><use href="#i-table"/></svg>
+            </button>
+            <button type="button" class="editor-tb-btn" data-cmd="divider"
+                    data-tip="分割线" aria-label="插入分割线">
+              <svg class="icon"><use href="#i-divider"/></svg>
+            </button>
+          </div>
+
+          <div class="editor-tb-group editor-tb-end">
+            <span class="editor-tb-sep" aria-hidden="true"></span>
+            <button type="button" class="editor-tb-btn" id="previewBtn"
+                    data-tip="预览 · Ctrl+Shift+P" aria-label="预览" aria-pressed="false">
+              <svg class="icon"><use href="#i-eye"/></svg>
+              <span class="editor-tb-label" id="previewLabel">预览</span>
+            </button>
+            <button type="button" class="editor-tb-btn" id="focusBtn"
+                    data-tip="专注写作 · Esc 退出" aria-label="专注写作" aria-pressed="false">
+              <svg class="icon"><use href="#i-maximize"/></svg>
+              <span class="editor-tb-label" id="focusLabel">专注</span>
+            </button>
+          </div>
+        </div>
+
+        <label class="sr-only" for="noteContent">正文</label>
+        <textarea id="noteContent" placeholder="用 Markdown 写点什么…… 输入 / 插入标题、表格或笔记链接">{{ note.Content }}</textarea>
+
+        <div class="editor-preview" id="editorPreview" hidden>
+          <article class="note-body note-reading editor-preview-body" id="editorPreviewBody"></article>
+        </div>
       </div>
-      <textarea id="noteContent" placeholder="用 Markdown 写点什么……">{{ note.Content }}</textarea>
 
       <div class="editor-foot">
         <span id="editorWordCount">0 字</span>
         <span class="notes-dot">·</span>
-        <span>支持 Markdown</span>
+        <span id="editorReadTime">约 1 分钟</span>
         <span class="notes-dot">·</span>
-        <span><kbd>Ctrl</kbd> + <kbd>S</kbd> 保存</span>
+        <span class="editor-foot-hint">输入 <kbd>/</kbd> 插入内容 · <kbd>[[</kbd> 链接笔记</span>
+        <span class="editor-foot-end"><kbd>Ctrl</kbd><span>+</span><kbd>S</kbd><span>保存</span></span>
       </div>
       <p class="form-error form-msg" id="editorMsg" role="alert"></p>
     </div>
 
     <aside class="editor-settings" aria-label="笔记设置">
+      <div class="editor-settings-head">
+        <span class="editor-settings-title">笔记设置</span>
+      </div>
+
       <section class="editor-setting">
         <label class="field-label" for="noteParent">所属上级</label>
         <select id="noteParent" class="form-control-dark">
@@ -102,9 +197,9 @@
 
       <section class="editor-setting">
         <span class="field-label">引用其他笔记</span>
-        <p class="field-help">在正文里写 <span class="note-syntax">[[笔记标题]]</span> 或 <span class="note-syntax">[[上级 / 子笔记]]</span> 即可建立站内链接。</p>
-        <button type="button" class="btn-ghost editor-insert-link" id="insertNoteLinkBtn">
-          <svg class="icon"><use href="#i-link"/></svg>插入笔记链接
+        <p class="field-help">在正文里输入 <span class="note-syntax">[[</span> 会弹出笔记联想；也可以写 <span class="note-syntax">[[上级 / 子笔记]]</span> 建立站内链接。</p>
+        <button type="button" class="btn-ghost editor-insert-link" id="insertNoteLinkBtnAside">
+          <svg class="icon"><use href="#i-link"/></svg>浏览并插入笔记链接
         </button>
       </section>
 
@@ -114,6 +209,51 @@
     </aside>
   </div>
 </main>
+
+<!-- 段落样式菜单 -->
+<div class="editor-popover editor-menu" id="styleMenu" role="menu" aria-label="段落样式" hidden>
+  <button type="button" class="editor-popover-item" role="menuitem" data-style="">
+    <span class="editor-menu-label">正文</span><kbd>—</kbd>
+  </button>
+  <button type="button" class="editor-popover-item" role="menuitem" data-style="# ">
+    <span class="editor-menu-label is-h1">标题 1</span><kbd>#</kbd>
+  </button>
+  <button type="button" class="editor-popover-item" role="menuitem" data-style="## ">
+    <span class="editor-menu-label is-h2">标题 2</span><kbd>##</kbd>
+  </button>
+  <button type="button" class="editor-popover-item" role="menuitem" data-style="### ">
+    <span class="editor-menu-label is-h3">标题 3</span><kbd>###</kbd>
+  </button>
+  <button type="button" class="editor-popover-item" role="menuitem" data-style="> ">
+    <span class="editor-menu-label">引用</span><kbd>&gt;</kbd>
+  </button>
+</div>
+
+<!-- 斜杠命令 -->
+<div class="editor-popover editor-slash" id="slashMenu" role="listbox" aria-label="插入内容" hidden></div>
+
+<!-- 笔记引用联想 -->
+<div class="editor-popover editor-autocomplete" id="noteAuto" role="listbox" aria-label="链接到笔记" hidden></div>
+
+<!-- 选中文本浮动工具条 -->
+<div class="editor-bubble" id="editorBubble" role="toolbar" aria-label="选中文本格式" hidden>
+  <button type="button" data-bubble="bold" aria-label="粗体" data-tip="粗体">
+    <svg class="icon"><use href="#i-bold"/></svg>
+  </button>
+  <button type="button" data-bubble="italic" aria-label="斜体" data-tip="斜体">
+    <svg class="icon"><use href="#i-italic"/></svg>
+  </button>
+  <button type="button" data-bubble="strike" aria-label="删除线" data-tip="删除线">
+    <svg class="icon"><use href="#i-strikethrough"/></svg>
+  </button>
+  <button type="button" data-bubble="inlinecode" aria-label="行内代码" data-tip="行内代码">
+    <svg class="icon"><use href="#i-code"/></svg>
+  </button>
+  <span class="editor-bubble-sep" aria-hidden="true"></span>
+  <button type="button" data-bubble="link" aria-label="链接" data-tip="链接">
+    <svg class="icon"><use href="#i-link"/></svg>
+  </button>
+</div>
 
 <!-- 插入笔记链接 -->
 <div class="app-modal" id="noteLinkModal" aria-labelledby="noteLinkTitle">
@@ -162,7 +302,8 @@
   "isEncrypted": 1 if note.IsEncrypted else 0,
   "hasPassword": 1 if note.HasPassword else 0,
   "maxChildDepth": NOTE_MAX_CHILD_DEPTH,
-  "cancelUrl": cancel_url
+  "cancelUrl": cancel_url,
+  "previewUrl": url_for('note_preview')
 } | tojson }}</script>
 <script id="noteLinkData" type="application/json">{{ link_notes | tojson }}</script>
 <script src="{{ url_for('static', filename='js/notes.js') }}"></script>

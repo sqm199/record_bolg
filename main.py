@@ -265,6 +265,7 @@ def _public_note(record, by_id, unlocked):
         "ParentID": record.get("ParentID") or "",
         "Path": record.get("Path") or "",
         "Content": "" if locked else (record.get("Content") or ""),
+        "ContentFormat": MnoteInfo.content_format(record),
         "IsEncrypted": int(bool(record.get("IsEncrypted"))),
         "Locked": locked,
         "HasPassword": bool(record.get("PasswordHash")),
@@ -325,6 +326,22 @@ def _link_notes(tree):
     ]
 
 
+def _note_content_from_form():
+    """读取并校验编辑器正文，富文本先做白名单清洗。"""
+    fmt = (request.form.get('content_format') or MnoteInfo.CONTENT_FORMAT_MARKDOWN).strip().lower()
+    if fmt not in (MnoteInfo.CONTENT_FORMAT_MARKDOWN, MnoteInfo.CONTENT_FORMAT_HTML):
+        return '', '', MnoteInfo.CONTENT_FORMAT_MARKDOWN, '不支持的正文格式'
+    raw_content = request.form.get('content', '')
+    if fmt == MnoteInfo.CONTENT_FORMAT_HTML:
+        raw_content = MnoteInfo.sanitize_html(raw_content)
+        if MnoteInfo.html_is_empty(raw_content):
+            raw_content = ''
+    title, content, error = MnoteInfo.normalize_content_limits(
+        request.form.get('title', ''), raw_content
+    )
+    return title, content, fmt, error
+
+
 @app.route('/note')
 def note():
     if not login_cat():
@@ -359,8 +376,11 @@ def note_view(keyid):
         html_body, words, read_minutes = "", 0, 0
     else:
         content = record.get("Content") or ""
-        html_body = MnoteInfo.render_body(content, active) if content else _legacy_note_html(record)
-        words = MnoteInfo.word_count(content)
+        if "Content" in record:
+            html_body = MnoteInfo.render_record_body(record, active) if content else ""
+        else:
+            html_body = _legacy_note_html(record)
+        words = MnoteInfo.word_count(content, MnoteInfo.content_format(record))
         read_minutes = MnoteInfo.reading_minutes(words)
 
     prev_record, next_record = _siblings(record, active)
@@ -405,20 +425,40 @@ def note_new():
     parent = by_id.get(parent_id)
     if parent_id and (not parent or MnoteInfo.note_depth(parent, by_id) >= MnoteInfo.MAX_CHILD_DEPTH):
         parent_id = ""
+    editor = (request.args.get('editor') or 'rich').strip().lower()
+    note = {
+        "KeyID": "",
+        "Name": "",
+        "Content": "",
+        "ContentFormat": MnoteInfo.CONTENT_FORMAT_HTML,
+        "ParentID": parent_id,
+        "IsEncrypted": 0,
+        "HasPassword": False,
+    }
+    parent_options = MnoteInfo.parent_options(active, by_id)
+    link_notes = _link_notes(tree)
+    cancel_url = url_for('note_view', keyid=parent_id) if parent_id else url_for('note')
+    if editor == 'markdown':
+        return render_template(
+            'note_editor.html',
+            mode='new',
+            note=note,
+            parent_options=parent_options,
+            link_notes=link_notes,
+            cancel_url=cancel_url,
+            rich_url=url_for('note_new', editor='rich', parent=parent_id),
+            stats=_note_stats(active, tree),
+        )
     return render_template(
-        'note_editor.html',
+        'note_editor_rich.html',
         mode='new',
-        note={
-            "KeyID": "",
-            "Name": "",
-            "Content": "",
-            "ParentID": parent_id,
-            "IsEncrypted": 0,
-            "HasPassword": False,
-        },
-        parent_options=MnoteInfo.parent_options(active, by_id),
-        link_notes=_link_notes(tree),
-        cancel_url=url_for('note_view', keyid=parent_id) if parent_id else url_for('note'),
+        note=note,
+        initial_html="",
+        converting=False,
+        markdown_url=url_for('note_new', editor='markdown', parent=parent_id),
+        parent_options=parent_options,
+        link_notes=link_notes,
+        cancel_url=cancel_url,
         stats=_note_stats(active, tree),
     )
 
@@ -434,17 +474,60 @@ def note_edit(keyid):
     item = _public_note(record, by_id, unlocked)
     if item["Locked"]:
         return redirect(url_for('note_view', keyid=keyid))
+
+    fmt = MnoteInfo.content_format(record)
+    editor = (request.args.get('editor') or '').strip().lower()
+    if not editor:
+        editor = 'rich' if fmt == MnoteInfo.CONTENT_FORMAT_HTML else 'markdown'
+    parent_options = MnoteInfo.parent_options(active, by_id, exclude_id=keyid)
+    link_notes = [n for n in _link_notes(tree) if n["id"] != keyid]
+    cancel_url = url_for('note_view', keyid=keyid)
+
+    if editor == 'rich':
+        content = record.get("Content") or ""
+        if fmt == MnoteInfo.CONTENT_FORMAT_HTML:
+            initial_html = MnoteInfo.sanitize_html(content)
+        else:
+            initial_html = MnoteInfo.render_body(content, active)
+        return render_template(
+            'note_editor_rich.html',
+            mode='edit',
+            note=item,
+            initial_html=initial_html,
+            converting=fmt != MnoteInfo.CONTENT_FORMAT_HTML,
+            markdown_url=url_for('note_edit', keyid=keyid, editor='markdown')
+            if fmt != MnoteInfo.CONTENT_FORMAT_HTML else '',
+            parent_options=parent_options,
+            link_notes=link_notes,
+            cancel_url=cancel_url,
+            stats=_note_stats(active, tree),
+        )
+
+    if fmt == MnoteInfo.CONTENT_FORMAT_HTML:
+        # 富文本笔记不能直接回退到 Markdown 源编辑。
+        return redirect(url_for('note_edit', keyid=keyid, editor='rich'))
     return render_template(
         'note_editor.html',
         mode='edit',
         note=item,
-        parent_options=MnoteInfo.parent_options(active, by_id, exclude_id=keyid),
-        link_notes=[
-            n for n in _link_notes(tree) if n["id"] != keyid
-        ],
-        cancel_url=url_for('note_view', keyid=keyid),
+        parent_options=parent_options,
+        link_notes=link_notes,
+        cancel_url=cancel_url,
+        rich_url=url_for('note_edit', keyid=keyid, editor='rich'),
         stats=_note_stats(active, tree),
     )
+
+
+@app.route('/note/preview', methods=['POST'])
+def note_preview():
+    """编辑器预览：复用阅读页的 Markdown 与站内链接渲染。"""
+    if not login_cat():
+        return jsonify({"code": 0, "msgs": "未登录", "html": ""})
+    raw, active, by_id, tree, unlocked = _note_state()
+    _, content, error = MnoteInfo.normalize_content_limits('预览', request.form.get('content', ''))
+    if error:
+        return jsonify({"code": 0, "msgs": error, "html": ""})
+    return jsonify({"code": 1, "msgs": "", "html": MnoteInfo.render_body(content, active)})
 
 
 @app.route('/note/save', methods=['POST'])
@@ -452,9 +535,7 @@ def note_save():
     if not login_cat():
         return jsonify({"code": 0, "msgs": "未登录"})
     raw, active, by_id, tree, unlocked = _note_state()
-    title, content, error = MnoteInfo.normalize_content_limits(
-        request.form.get('title', ''), request.form.get('content', '')
-    )
+    title, content, content_format, error = _note_content_from_form()
     if error:
         return jsonify({"code": 0, "msgs": error})
 
@@ -483,6 +564,7 @@ def note_save():
         "Path": key_id,
         "Remark": "",
         "Content": content,
+        "ContentFormat": content_format,
         "IsEncrypted": 1 if is_encrypted else 0,
         "PasswordHash": generate_password_hash(password) if is_encrypted else "",
         "IsDelete": 0,
@@ -510,9 +592,7 @@ def note_update():
     if record.get("IsEncrypted") and key_id not in set(unlocked):
         return jsonify({"code": 0, "msgs": "请先解锁笔记再编辑"})
 
-    title, content, error = MnoteInfo.normalize_content_limits(
-        request.form.get('title', ''), request.form.get('content', '')
-    )
+    title, content, content_format, error = _note_content_from_form()
     if error:
         return jsonify({"code": 0, "msgs": error})
 
@@ -539,6 +619,7 @@ def note_update():
 
     record["Name"] = title
     record["Content"] = content
+    record["ContentFormat"] = content_format
     record["IsEncrypted"] = 1 if is_encrypted else 0
     record["ParentID"] = parent_id
     if parent_id != old_parent:
