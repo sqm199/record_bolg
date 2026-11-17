@@ -2,64 +2,82 @@
 (function () {
   'use strict';
 
-  var kit = window.TipTapKit;
-  var configEl = document.getElementById('richEditorConfig');
-  if (!configEl) return;
-  var cfg;
-  try { cfg = JSON.parse(configEl.textContent); } catch (e) { return; }
+  function mount(root, hooks) {
+    root = root || document;
+    hooks = hooks || {};
+    var kit = window.TipTapKit;
+    function byId(id) { return root.querySelector('#' + id); }
 
-  var linkEl = document.getElementById('noteLinkData');
-  var linkNotes = [];
-  try { linkNotes = JSON.parse(linkEl ? linkEl.textContent : '[]'); } catch (e) { linkNotes = []; }
+    var configEl = byId('richEditorConfig');
+    if (!configEl) return null;
+    var cfg;
+    try { cfg = JSON.parse(configEl.textContent); } catch (e) { return null; }
 
-  var titleEl = document.getElementById('noteTitle');
-  var hostEl = document.getElementById('richContent');
-  var shellEl = document.getElementById('editorShell');
-  var toolbarEl = document.getElementById('editorToolbar');
-  var statusEl = document.getElementById('editorStatus');
-  var statusTextEl = document.getElementById('editorStatusText');
-  var messageEl = document.getElementById('editorMsg');
-  var saveBtn = document.getElementById('editorSaveBtn');
-  var cancelBtn = document.getElementById('editorCancelBtn');
-  var encryptEl = document.getElementById('noteEncrypt');
-  var passwordEl = document.getElementById('notePassword');
-  var passwordWrap = document.getElementById('passwordWrap');
-  var parentEl = document.getElementById('noteParent');
-  var parentHint = document.getElementById('parentDepthHint');
-  var wordEl = document.getElementById('editorWordCount');
-  var readEl = document.getElementById('editorReadTime');
-  var styleBtn = document.getElementById('styleBtn');
-  var styleLabel = document.getElementById('styleLabel');
-  var styleMenu = document.getElementById('styleMenu');
-  var tableBtn = document.getElementById('tableBtn');
-  var tableMenu = document.getElementById('tableMenu');
-  var slashMenu = document.getElementById('slashMenu');
-  var noteAuto = document.getElementById('noteAuto');
-  var bubbleEl = document.getElementById('editorBubble');
-  var focusBtn = document.getElementById('focusBtn');
-  var focusLabel = document.getElementById('focusLabel');
-  var undoBtn = document.getElementById('undoBtn');
-  var redoBtn = document.getElementById('redoBtn');
-  var draftBanner = document.getElementById('draftBanner');
-  var draftRestore = document.getElementById('draftRestoreBtn');
-  var draftDiscard = document.getElementById('draftDiscardBtn');
-  var discardModalEl = document.getElementById('editorDiscardModal');
-  var discardConfirm = document.getElementById('editorDiscardConfirmBtn');
-  var noteLinkModalEl = document.getElementById('noteLinkModal');
-  var noteLinkSearchEl = document.getElementById('noteLinkSearch');
-  var noteLinkListEl = document.getElementById('noteLinkList');
-  var richLinkModalEl = document.getElementById('richLinkModal');
-  var richLinkForm = document.getElementById('richLinkForm');
-  var richLinkUrlEl = document.getElementById('richLinkUrl');
-  var richImageModalEl = document.getElementById('richImageModal');
-  var richImageForm = document.getElementById('richImageForm');
-  var richImageUrlEl = document.getElementById('richImageUrl');
-  var richImageAltEl = document.getElementById('richImageAlt');
+    var linkEl = byId('noteLinkData');
+    var linkNotes = [];
+    try { linkNotes = JSON.parse(linkEl ? linkEl.textContent : '[]'); } catch (e) { linkNotes = []; }
 
-  if (!kit) {
-    if (hostEl) hostEl.innerHTML = '<p class="editor-preview-empty">富文本编辑器资源加载失败，请刷新页面重试。</p>';
-    return;
-  }
+    var titleEl = byId('noteTitle');
+    var hostEl = byId('richContent');
+    var shellEl = byId('editorShell');
+    var toolbarEl = byId('editorToolbar');
+    var statusEl = byId('editorStatus');
+    var statusTextEl = byId('editorStatusText');
+    var messageEl = byId('editorMsg');
+    var saveBtn = byId('editorSaveBtn');
+    var cancelBtn = byId('editorCancelBtn');
+    var encryptEl = byId('noteEncrypt');
+    var passwordEl = byId('notePassword');
+    var passwordWrap = byId('passwordWrap');
+    var parentEl = byId('noteParent');
+    var parentHint = byId('parentDepthHint');
+    var wordEl = byId('editorWordCount');
+    var readEl = byId('editorReadTime');
+    var styleBtn = byId('styleBtn');
+    var styleLabel = byId('styleLabel');
+    var styleMenu = byId('styleMenu');
+    var tableBtn = byId('tableBtn');
+    var tableMenu = byId('tableMenu');
+    var slashMenu = byId('slashMenu');
+    var noteAuto = byId('noteAuto');
+    var bubbleEl = byId('editorBubble');
+    var focusBtn = byId('focusBtn');
+    var focusLabel = byId('focusLabel');
+    var undoBtn = byId('undoBtn');
+    var redoBtn = byId('redoBtn');
+    var draftBanner = byId('draftBanner');
+    var draftRestore = byId('draftRestoreBtn');
+    var draftDiscard = byId('draftDiscardBtn');
+    var discardModalEl = byId('editorDiscardModal');
+    var discardConfirm = byId('editorDiscardConfirmBtn');
+    var noteLinkModalEl = byId('noteLinkModal');
+    var noteLinkSearchEl = byId('noteLinkSearch');
+    var noteLinkListEl = byId('noteLinkList');
+    var richLinkModalEl = byId('richLinkModal');
+    var richLinkForm = byId('richLinkForm');
+    var richLinkUrlEl = byId('richLinkUrl');
+    var richImageModalEl = byId('richImageModal');
+    var richImageForm = byId('richImageForm');
+    var richImageUrlEl = byId('richImageUrl');
+    var richImageAltEl = byId('richImageAlt');
+
+    if (!kit) {
+      if (hostEl) hostEl.innerHTML = '<p class="editor-preview-empty">富文本编辑器资源加载失败，请刷新页面重试。</p>';
+      return null;
+    }
+
+    var controller = new AbortController();
+    var signal = controller.signal;
+    function onDoc(type, handler, options) {
+      options = options === true ? { capture: true } : Object.assign({}, options || {});
+      options.signal = signal;
+      document.addEventListener(type, handler, options);
+    }
+    function onWindow(type, handler, options) {
+      options = Object.assign({}, options || {});
+      options.signal = signal;
+      window.addEventListener(type, handler, options);
+    }
 
   var state = {
     saving: false,
@@ -814,6 +832,10 @@
         clearDraft();
         setStatus('已保存', 'saved');
         var keyId = data.keyid || cfg.keyid;
+        if (typeof hooks.onSaved === 'function') {
+          hooks.onSaved(data, keyId);
+          return;
+        }
         window.location.href = '/note/view/' + encodeURIComponent(keyId);
         return;
       }
@@ -852,20 +874,32 @@
   if (parentEl) parentEl.addEventListener('change', function () { checkDirty(); updateParentHint(); });
   if (encryptEl) encryptEl.addEventListener('change', syncEncryption);
   if (saveBtn) saveBtn.addEventListener('click', save);
+  var discardModal = null;
+  function leaveEditor() {
+    clearDraft();
+    state.saved = true;
+    if (typeof hooks.onCancel === 'function') {
+      hooks.onCancel();
+      return;
+    }
+    window.location.href = cfg.cancelUrl || '/note';
+  }
   if (cancelBtn) {
     cancelBtn.addEventListener('click', function (event) {
-      if (!isDirtyNow()) return;
+      if (typeof hooks.onCancel === 'function') {
+        event.preventDefault();
+        if (!isDirtyNow()) { leaveEditor(); return; }
+      } else if (!isDirtyNow()) {
+        return;
+      }
       event.preventDefault();
       discardModal = discardModal || UI.modal(discardModalEl);
       discardModal.show();
     });
   }
-  var discardModal = null;
   if (discardConfirm) {
     discardConfirm.addEventListener('click', function () {
-      clearDraft();
-      state.saved = true;
-      window.location.href = cfg.cancelUrl || '/note';
+      leaveEditor();
     });
   }
   if (styleBtn) styleBtn.addEventListener('click', toggleStyleMenu);
@@ -873,8 +907,9 @@
   if (focusBtn) focusBtn.addEventListener('click', function () { setFocus(!state.focus); });
   if (undoBtn) undoBtn.addEventListener('click', function () { runCommand('undo'); });
   if (redoBtn) redoBtn.addEventListener('click', function () { runCommand('redo'); });
-  if (document.getElementById('insertNoteLinkBtnAside')) {
-    document.getElementById('insertNoteLinkBtnAside').addEventListener('click', openNoteLink);
+  var insertNoteLinkBtnAside = byId('insertNoteLinkBtnAside');
+  if (insertNoteLinkBtnAside) {
+    insertNoteLinkBtnAside.addEventListener('click', openNoteLink);
   }
   if (noteLinkSearchEl) {
     noteLinkSearchEl.addEventListener('input', function () { renderNoteLinkList(noteLinkSearchEl.value); });
@@ -933,7 +968,7 @@
     });
   }
 
-  document.addEventListener('mousedown', function (event) {
+  onDoc('mousedown', function (event) {
     if (!event.target.closest('.editor-popover') &&
         !event.target.closest('#styleBtn') &&
         !event.target.closest('#tableBtn')) {
@@ -945,9 +980,9 @@
   var modalWasOpenCapture = function (event) {
     modalWasOpen = event.key === 'Escape' && !!document.querySelector('.app-modal.open');
   };
-  document.addEventListener('keydown', modalWasOpenCapture, true);
+  onDoc('keydown', modalWasOpenCapture, true);
 
-  document.addEventListener('keydown', function (event) {
+  onDoc('keydown', function (event) {
     if (modalWasOpen || document.querySelector('.app-modal.open')) return;
     var mod = event.ctrlKey || event.metaKey;
     if (mod && !event.shiftKey && event.key.toLowerCase() === 's') {
@@ -967,14 +1002,14 @@
     }
   });
 
-  window.addEventListener('beforeunload', function (event) {
+  onWindow('beforeunload', function (event) {
     if (!state.saved && isDirtyNow()) {
       event.preventDefault();
       event.returnValue = '';
     }
   });
-  window.addEventListener('scroll', function () { hideBubble(); }, { passive: true });
-  window.addEventListener('resize', function () { hideBubble(); closeMenus(); });
+  onWindow('scroll', function () { hideBubble(); }, { passive: true });
+  onWindow('resize', function () { hideBubble(); closeMenus(); });
 
   /* ── 初始化编辑器 ── */
   function initEditor() {
@@ -1069,5 +1104,34 @@
   }
   if (draftDiscard) draftDiscard.addEventListener('click', clearDraft);
 
+  function destroy() {
+    state.saved = true;
+    if (discardModal) discardModal.hide();
+    Array.prototype.forEach.call(root.querySelectorAll('.app-modal.open'), function (el) {
+      var modal = UI.modal(el);
+      if (modal) modal.hide();
+    });
+    if (editor) {
+      try { editor.destroy(); } catch (e) { /* 已卸载 */ }
+      editor = null;
+    }
+    document.body.classList.remove('editor-focus');
+    controller.abort();
+  }
+
   initEditor();
+
+  return {
+    destroy: destroy,
+    isDirty: isDirtyNow,
+    focusEditor: function () { if (editor) editor.chain().focus().run(); }
+  };
+  }
+
+  window.NoteEditorRich = { mount: mount };
+
+  var autoConfig = document.getElementById('richEditorConfig');
+  if (autoConfig && !autoConfig.closest('[data-inline-editor]')) {
+    mount(document, {});
+  }
 })();

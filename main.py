@@ -438,9 +438,9 @@ def note_new():
     parent_options = MnoteInfo.parent_options(active, by_id)
     link_notes = _link_notes(tree)
     cancel_url = url_for('note_view', keyid=parent_id) if parent_id else url_for('note')
+    embed = request.args.get('embed') == '1'
     if editor == 'markdown':
-        return render_template(
-            'note_editor.html',
+        ctx = dict(
             mode='new',
             note=note,
             parent_options=parent_options,
@@ -449,8 +449,14 @@ def note_new():
             rich_url=url_for('note_new', editor='rich', parent=parent_id),
             stats=_note_stats(active, tree),
         )
-    return render_template(
-        'note_editor_rich.html',
+        if embed:
+            return jsonify({
+                "code": 1,
+                "editor": "markdown",
+                "html": render_template('_note_editor_md_fragment.html', **ctx),
+            })
+        return render_template('note_editor.html', **ctx)
+    ctx = dict(
         mode='new',
         note=note,
         initial_html="",
@@ -461,6 +467,13 @@ def note_new():
         cancel_url=cancel_url,
         stats=_note_stats(active, tree),
     )
+    if embed:
+        return jsonify({
+            "code": 1,
+            "editor": "rich",
+            "html": render_template('_note_editor_rich_fragment.html', **ctx),
+        })
+    return render_template('note_editor_rich.html', **ctx)
 
 
 @app.route('/note/<keyid>/edit')
@@ -482,6 +495,7 @@ def note_edit(keyid):
     parent_options = MnoteInfo.parent_options(active, by_id, exclude_id=keyid)
     link_notes = [n for n in _link_notes(tree) if n["id"] != keyid]
     cancel_url = url_for('note_view', keyid=keyid)
+    embed = request.args.get('embed') == '1'
 
     if editor == 'rich':
         content = record.get("Content") or ""
@@ -489,8 +503,7 @@ def note_edit(keyid):
             initial_html = MnoteInfo.sanitize_html(content)
         else:
             initial_html = MnoteInfo.render_body(content, active)
-        return render_template(
-            'note_editor_rich.html',
+        ctx = dict(
             mode='edit',
             note=item,
             initial_html=initial_html,
@@ -502,12 +515,18 @@ def note_edit(keyid):
             cancel_url=cancel_url,
             stats=_note_stats(active, tree),
         )
+        if embed:
+            return jsonify({
+                "code": 1,
+                "editor": "rich",
+                "html": render_template('_note_editor_rich_fragment.html', **ctx),
+            })
+        return render_template('note_editor_rich.html', **ctx)
 
     if fmt == MnoteInfo.CONTENT_FORMAT_HTML:
         # 富文本笔记不能直接回退到 Markdown 源编辑。
         return redirect(url_for('note_edit', keyid=keyid, editor='rich'))
-    return render_template(
-        'note_editor.html',
+    ctx = dict(
         mode='edit',
         note=item,
         parent_options=parent_options,
@@ -516,6 +535,13 @@ def note_edit(keyid):
         rich_url=url_for('note_edit', keyid=keyid, editor='rich'),
         stats=_note_stats(active, tree),
     )
+    if embed:
+        return jsonify({
+            "code": 1,
+            "editor": "markdown",
+            "html": render_template('_note_editor_md_fragment.html', **ctx),
+        })
+    return render_template('note_editor.html', **ctx)
 
 
 @app.route('/note/preview', methods=['POST'])

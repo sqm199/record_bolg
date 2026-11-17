@@ -1,0 +1,13 @@
+<script id="richEditorConfig" type="application/json">{{ {
+  "mode": mode,
+  "keyid": note.KeyID,
+  "title": note.Name,
+  "initialHtml": initial_html,
+  "parentId": note.ParentID,
+  "isEncrypted": 1 if note.IsEncrypted else 0,
+  "hasPassword": 1 if note.HasPassword else 0,
+  "maxChildDepth": NOTE_MAX_CHILD_DEPTH,
+  "cancelUrl": cancel_url,
+  "converting": 1 if converting else 0
+} | tojson }}</script>
+<script id="noteLinkData" type="application/json">{{ link_notes | tojson }}</script>

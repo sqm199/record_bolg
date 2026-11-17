@@ -199,6 +199,7 @@
 </div>
 
 {% if not locked %}
+<div id="notesModals">
 <!-- 移动笔记 -->
 <div class="app-modal" id="noteMoveModal" aria-labelledby="noteMoveTitle">
   <div class="app-modal-backdrop"></div>
@@ -263,9 +264,11 @@
     </div>
   </div>
 </div>
+</div>
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/notes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/note-inline.js') }}"></script>
 {% endblock %}

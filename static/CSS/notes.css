@@ -18,6 +18,15 @@
 .notes-workspace.is-overview { grid-template-columns: var(--note-rail-w) minmax(0, 1fr); }
 .notes-main { min-width: 0; }
 
+/* ── 页内嵌编辑：右侧主区切换成编辑器，左侧目录保持不动 ── */
+.notes-workspace.is-inline-editing .notes-main { grid-column: 2 / -1; }
+.notes-workspace.is-inline-editing .note-aside { display: none; }
+.notes-inline-editor { max-width: none; }
+.notes-inline-editor .editor-topbar { margin-top: 0; }
+body.editor-focus .notes-workspace.is-inline-editing { grid-template-columns: minmax(0, 1fr); }
+body.editor-focus .notes-workspace.is-inline-editing .notes-main { grid-column: auto; }
+body.editor-focus .notes-workspace.is-inline-editing .notes-rail { display: none; }
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1436,6 +1445,7 @@ body.editor-focus .rich-content.note-body { min-height: calc(100dvh - 236px); }
   .notes-workspace,
   .notes-workspace.is-overview,
   .notes-workspace.is-detail { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .notes-workspace.is-inline-editing .notes-main { grid-column: auto; }
 
   .notes-mobile-bar {
     display: inline-flex;

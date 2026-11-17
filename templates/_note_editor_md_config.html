@@ -1,0 +1,13 @@
+<script id="editorConfig" type="application/json">{{ {
+  "mode": mode,
+  "keyid": note.KeyID,
+  "title": note.Name,
+  "content": note.Content,
+  "parentId": note.ParentID,
+  "isEncrypted": 1 if note.IsEncrypted else 0,
+  "hasPassword": 1 if note.HasPassword else 0,
+  "maxChildDepth": NOTE_MAX_CHILD_DEPTH,
+  "cancelUrl": cancel_url,
+  "previewUrl": url_for('note_preview')
+} | tojson }}</script>
+<script id="noteLinkData" type="application/json">{{ link_notes | tojson }}</script>

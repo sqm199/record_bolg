@@ -2,54 +2,72 @@
 (function () {
   'use strict';
 
-  var configEl = document.getElementById('editorConfig');
-  if (!configEl) return;
-  var cfg;
-  try { cfg = JSON.parse(configEl.textContent); } catch (e) { return; }
+  function mount(root, hooks) {
+    root = root || document;
+    hooks = hooks || {};
+    function byId(id) { return root.querySelector('#' + id); }
 
-  var linkEl = document.getElementById('noteLinkData');
-  var linkNotes = [];
-  try { linkNotes = JSON.parse(linkEl ? linkEl.textContent : '[]'); } catch (e) { linkNotes = []; }
+    var configEl = byId('editorConfig');
+    if (!configEl) return null;
+    var cfg;
+    try { cfg = JSON.parse(configEl.textContent); } catch (e) { return null; }
 
-  /* ── DOM ── */
-  var titleEl = document.getElementById('noteTitle');
-  var contentEl = document.getElementById('noteContent');
-  var shellEl = document.getElementById('editorShell');
-  var toolbarEl = document.getElementById('editorToolbar');
-  var statusEl = document.getElementById('editorStatus');
-  var statusTextEl = document.getElementById('editorStatusText');
-  var messageEl = document.getElementById('editorMsg');
-  var saveBtn = document.getElementById('editorSaveBtn');
-  var cancelBtn = document.getElementById('editorCancelBtn');
-  var encryptEl = document.getElementById('noteEncrypt');
-  var passwordEl = document.getElementById('notePassword');
-  var passwordWrap = document.getElementById('passwordWrap');
-  var parentEl = document.getElementById('noteParent');
-  var parentHint = document.getElementById('parentDepthHint');
-  var wordEl = document.getElementById('editorWordCount');
-  var readEl = document.getElementById('editorReadTime');
-  var styleBtn = document.getElementById('styleBtn');
-  var styleLabel = document.getElementById('styleLabel');
-  var styleMenu = document.getElementById('styleMenu');
-  var slashMenu = document.getElementById('slashMenu');
-  var noteAuto = document.getElementById('noteAuto');
-  var bubbleEl = document.getElementById('editorBubble');
-  var previewBtn = document.getElementById('previewBtn');
-  var previewLabel = document.getElementById('previewLabel');
-  var focusBtn = document.getElementById('focusBtn');
-  var focusLabel = document.getElementById('focusLabel');
-  var previewEl = document.getElementById('editorPreview');
-  var previewBody = document.getElementById('editorPreviewBody');
-  var draftBanner = document.getElementById('draftBanner');
-  var draftRestore = document.getElementById('draftRestoreBtn');
-  var draftDiscard = document.getElementById('draftDiscardBtn');
-  var discardModalEl = document.getElementById('editorDiscardModal');
-  var discardConfirm = document.getElementById('editorDiscardConfirmBtn');
-  var linkModalEl = document.getElementById('noteLinkModal');
-  var linkSearchEl = document.getElementById('noteLinkSearch');
-  var linkListEl = document.getElementById('noteLinkList');
-  var insertLinkBtn = document.getElementById('insertNoteLinkBtn');
-  var insertLinkBtnAside = document.getElementById('insertNoteLinkBtnAside');
+    var linkEl = byId('noteLinkData');
+    var linkNotes = [];
+    try { linkNotes = JSON.parse(linkEl ? linkEl.textContent : '[]'); } catch (e) { linkNotes = []; }
+
+    var controller = new AbortController();
+    var signal = controller.signal;
+    function addDoc(type, handler, options) {
+      options = options === true ? { capture: true } : Object.assign({}, options || {});
+      options.signal = signal;
+      document.addEventListener(type, handler, options);
+    }
+    function addWin(type, handler, options) {
+      options = Object.assign({}, options || {});
+      options.signal = signal;
+      window.addEventListener(type, handler, options);
+    }
+
+    /* ── DOM ── */
+    var titleEl = byId('noteTitle');
+    var contentEl = byId('noteContent');
+    var shellEl = byId('editorShell');
+    var toolbarEl = byId('editorToolbar');
+    var statusEl = byId('editorStatus');
+    var statusTextEl = byId('editorStatusText');
+    var messageEl = byId('editorMsg');
+    var saveBtn = byId('editorSaveBtn');
+    var cancelBtn = byId('editorCancelBtn');
+    var encryptEl = byId('noteEncrypt');
+    var passwordEl = byId('notePassword');
+    var passwordWrap = byId('passwordWrap');
+    var parentEl = byId('noteParent');
+    var parentHint = byId('parentDepthHint');
+    var wordEl = byId('editorWordCount');
+    var readEl = byId('editorReadTime');
+    var styleBtn = byId('styleBtn');
+    var styleLabel = byId('styleLabel');
+    var styleMenu = byId('styleMenu');
+    var slashMenu = byId('slashMenu');
+    var noteAuto = byId('noteAuto');
+    var bubbleEl = byId('editorBubble');
+    var previewBtn = byId('previewBtn');
+    var previewLabel = byId('previewLabel');
+    var focusBtn = byId('focusBtn');
+    var focusLabel = byId('focusLabel');
+    var previewEl = byId('editorPreview');
+    var previewBody = byId('editorPreviewBody');
+    var draftBanner = byId('draftBanner');
+    var draftRestore = byId('draftRestoreBtn');
+    var draftDiscard = byId('draftDiscardBtn');
+    var discardModalEl = byId('editorDiscardModal');
+    var discardConfirm = byId('editorDiscardConfirmBtn');
+    var linkModalEl = byId('noteLinkModal');
+    var linkSearchEl = byId('noteLinkSearch');
+    var linkListEl = byId('noteLinkList');
+    var insertLinkBtn = byId('insertNoteLinkBtn');
+    var insertLinkBtnAside = byId('insertNoteLinkBtnAside');
 
   var FENCE = '```';
   var BLOCK_RE = /^(\s*)(#{1,6}\s+|>\s?|[-*+]\s+|\d+[.)]\s+)/;
@@ -337,16 +355,16 @@
     else if (QUOTE_RE.test(line)) label = '引用';
     if (styleLabel) styleLabel.textContent = label;
 
-    var ul = document.querySelector('.editor-tb-btn[data-cmd="ul"]');
-    var ol = document.querySelector('.editor-tb-btn[data-cmd="ol"]');
-    var quote = document.querySelector('.editor-tb-btn[data-cmd="quote"]');
+    var ul = root.querySelector('.editor-tb-btn[data-cmd="ul"]');
+    var ol = root.querySelector('.editor-tb-btn[data-cmd="ol"]');
+    var quote = root.querySelector('.editor-tb-btn[data-cmd="quote"]');
     setPressed(ul, UL_RE.test(line));
     setPressed(ol, OL_RE.test(line));
     setPressed(quote, QUOTE_RE.test(line));
-    setPressed(document.querySelector('.editor-tb-btn[data-cmd="bold"]'), isWrapped('**'));
-    setPressed(document.querySelector('.editor-tb-btn[data-cmd="italic"]'), isWrapped('*'));
-    setPressed(document.querySelector('.editor-tb-btn[data-cmd="strike"]'), isWrapped('~~'));
-    setPressed(document.querySelector('.editor-tb-btn[data-cmd="inlinecode"]'), isWrapped('`'));
+    setPressed(root.querySelector('.editor-tb-btn[data-cmd="bold"]'), isWrapped('**'));
+    setPressed(root.querySelector('.editor-tb-btn[data-cmd="italic"]'), isWrapped('*'));
+    setPressed(root.querySelector('.editor-tb-btn[data-cmd="strike"]'), isWrapped('~~'));
+    setPressed(root.querySelector('.editor-tb-btn[data-cmd="inlinecode"]'), isWrapped('`'));
 
     var bubbleButtons = bubbleEl ? bubbleEl.querySelectorAll('[data-bubble]') : [];
     Array.prototype.forEach.call(bubbleButtons, function (btn) {
@@ -822,6 +840,10 @@
         clearDraft();
         setStatus('已保存', 'saved');
         var keyId = data.keyid || cfg.keyid;
+        if (typeof hooks.onSaved === 'function') {
+          hooks.onSaved(data, keyId);
+          return;
+        }
         window.location.href = '/note/view/' + encodeURIComponent(keyId);
         return;
       }
@@ -970,14 +992,14 @@
     contentEl.addEventListener('scroll', hideBubble);
   }
 
-  document.addEventListener('selectionchange', function () {
+  addDoc('selectionchange', function () {
     if (document.activeElement === contentEl) {
       updateChrome();
       scheduleBubble();
     }
   });
-  window.addEventListener('scroll', function () { hideBubble(); closeMenus(); }, { passive: true });
-  window.addEventListener('resize', function () { hideBubble(); closeMenus(); });
+  addWin('scroll', function () { hideBubble(); closeMenus(); }, { passive: true });
+  addWin('resize', function () { hideBubble(); closeMenus(); });
 
   if (titleEl) titleEl.addEventListener('input', checkDirty);
   if (parentEl) parentEl.addEventListener('change', function () { checkDirty(); updateParentHint(); });
@@ -1011,17 +1033,17 @@
     });
   }
 
-  document.addEventListener('mousedown', function (event) {
+  addDoc('mousedown', function (event) {
     if (!event.target.closest('.editor-popover') && !event.target.closest('#styleBtn')) closeMenus();
     if (!event.target.closest('#editorBubble')) hideBubble();
   });
 
   var modalWasOpen = false;
-  document.addEventListener('keydown', function (event) {
+  addDoc('keydown', function (event) {
     modalWasOpen = event.key === 'Escape' && !!document.querySelector('.app-modal.open');
   }, true);
 
-  document.addEventListener('keydown', function (event) {
+  addDoc('keydown', function (event) {
     // 弹窗打开时把快捷键让给弹窗（UI 负责 Esc 关闭）。
     if (modalWasOpen || document.querySelector('.app-modal.open')) return;
     var mod = event.ctrlKey || event.metaKey;
@@ -1062,9 +1084,23 @@
 
   /* ── 取消 / 未保存提醒 ── */
   var discardModal = null;
+  function leaveEditor() {
+    clearDraft();
+    state.saved = true;
+    if (typeof hooks.onCancel === 'function') {
+      hooks.onCancel();
+      return;
+    }
+    window.location.href = cfg.cancelUrl || '/note';
+  }
   if (cancelBtn) {
     cancelBtn.addEventListener('click', function (event) {
-      if (!isDirtyNow()) return;
+      if (typeof hooks.onCancel === 'function') {
+        event.preventDefault();
+        if (!isDirtyNow()) { leaveEditor(); return; }
+      } else if (!isDirtyNow()) {
+        return;
+      }
       event.preventDefault();
       discardModal = discardModal || UI.modal(discardModalEl);
       discardModal.show();
@@ -1072,12 +1108,10 @@
   }
   if (discardConfirm) {
     discardConfirm.addEventListener('click', function () {
-      clearDraft();
-      state.saved = true;
-      window.location.href = cfg.cancelUrl || '/note';
+      leaveEditor();
     });
   }
-  window.addEventListener('beforeunload', function (event) {
+  addWin('beforeunload', function (event) {
     if (!state.saved && isDirtyNow()) {
       event.preventDefault();
       event.returnValue = '';
@@ -1117,4 +1151,31 @@
   updateChrome();
   checkDirty();
   loadDraft();
+
+  function destroy() {
+    state.saved = true;
+    if (discardModal) discardModal.hide();
+    Array.prototype.forEach.call(root.querySelectorAll('.app-modal.open'), function (el) {
+      var modal = UI.modal(el);
+      if (modal) modal.hide();
+    });
+    if (mirrorEl && mirrorEl.parentNode) mirrorEl.parentNode.removeChild(mirrorEl);
+    mirrorEl = null;
+    document.body.classList.remove('editor-focus');
+    controller.abort();
+  }
+
+  return {
+    destroy: destroy,
+    isDirty: isDirtyNow,
+    focusEditor: function () { if (contentEl) contentEl.focus(); }
+  };
+  }
+
+  window.NoteEditorMarkdown = { mount: mount };
+
+  var autoConfig = document.getElementById('editorConfig');
+  if (autoConfig && !autoConfig.closest('[data-inline-editor]')) {
+    mount(document, {});
+  }
 })();

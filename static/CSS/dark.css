@@ -74,6 +74,9 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* 预留滚动条空间，避免页面在“可滚动 / 不可滚动”之间切换时整体左右跳动 */
+html { scrollbar-gutter: stable; }
+
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
