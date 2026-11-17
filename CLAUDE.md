@@ -95,7 +95,7 @@ storage.save('photoinfo', records)
 
 富文本编辑器基于 TipTap（`@tiptap/*` 2.27.3），已打包为 `static/vendor/tiptap.js`，构建说明见 `static/vendor/README.md`；交互在 `static/js/note-editor-rich.js`，模板为 `templates/note_editor_rich.html`。它支持段落样式、选区浮条、`/` 插入菜单、`[[` 笔记联想、表格编辑、链接/图片弹窗、草稿、专注模式，以及 Markdown 模式切换。Markdown 编辑器仍在 `static/js/note-editor.js` 与 `templates/note_editor.html`。
 
-阅读页的“编辑”“新建子笔记”以及目录树里的“+”都在当前页面内嵌打开编辑器：左侧目录保持原节点不动，右侧主区切换成编辑器（右侧“本篇导航”暂时隐藏），取消即恢复原阅读内容，编辑保存后由 `NotesPage.reload()` 就地替换工作区，新建保存后跳转到新笔记阅读页。编辑器片段由 `/note/new?embed=1`、`/note/<keyid>/edit?embed=1` 以 JSON 返回（模板 `_note_editor_rich_fragment.html` / `_note_editor_md_fragment.html`），交互在 `static/js/note-inline.js`；两个编辑器脚本均已改为可重复挂载的 `mount(root, hooks)` 形式。
+阅读页的“编辑”“新建子笔记”以及目录树里的“+”都在当前页面内嵌打开编辑器：左侧目录保持原节点不动，右侧主区切换成编辑器（右侧“本篇导航”暂时隐藏），取消即恢复原阅读内容；编辑与新建保存后都由 `NotesPage.reload()` 就地替换工作区并同步 URL，不整页刷新。目录顶部的“+”默认把新笔记挂到当前阅读的笔记下（其余目录行上的“+”仍使用该行节点）。编辑器片段由 `/note/new?embed=1`、`/note/<keyid>/edit?embed=1` 以 JSON 返回（模板 `_note_editor_rich_fragment.html` / `_note_editor_md_fragment.html`），交互在 `static/js/note-inline.js`；两个编辑器脚本均已改为可重复挂载的 `mount(root, hooks)` 形式。静态资源通过 `asset_url()` 附加修改时间版本号，避免反向代理强缓存旧脚本。
 
 Markdown 正文支持 `[[笔记标题]]` 或 `[[上级 / 子笔记]]` 站内引用（渲染时转换为 `/note/view/<keyid>`）；富文本中的站内链接直接是 `<a href="/note/view/<keyid>">`。阅读页右侧会列出引用本篇的其他笔记（`MnoteInfo.backlinks`，锁定笔记在解锁前不参与反链扫描）。删除父笔记时可选择“直接子笔记上移一层”或“连同全部后代一起软删除”。前端样式在 `static/CSS/notes.css`，交互在 `static/js/notes.js`；`templates/_note_rail.html` / `_note_tree_macros.html` 为各笔记页共用的目录树。
 

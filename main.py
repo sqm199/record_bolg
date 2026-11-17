@@ -39,6 +39,19 @@ app.config['NOTE_PATH']     = NOTE_PATH
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 app.jinja_env.globals['NOTE_MAX_CHILD_DEPTH'] = MnoteInfo.MAX_CHILD_DEPTH
 
+
+def _asset_version(filename):
+    """用文件修改时间做资源版本号，避免反向代理的强缓存返回旧脚本。"""
+    try:
+        return str(int(os.path.getmtime(os.path.join(app.static_folder, filename))))
+    except OSError:
+        return '0'
+
+
+@app.template_global()
+def asset_url(filename):
+    return url_for('static', filename=filename, v=_asset_version(filename))
+
 ADMIN_ACCOUNT  = os.environ.get("ADMIN_ACCOUNT", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 if not ADMIN_PASSWORD:

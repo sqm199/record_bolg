@@ -3,7 +3,7 @@
 {% block page_class %}page-wide{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/notes.css') }}">
+<link rel="stylesheet" href="{{ asset_url('CSS/notes.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -269,6 +269,12 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/notes.js') }}"></script>
-<script src="{{ url_for('static', filename='js/note-inline.js') }}"></script>
+<script id="noteEditorAssets" type="application/json">{{ {
+  "tiptap": asset_url('vendor/tiptap.js'),
+  "rich": asset_url('js/note-editor-rich.js'),
+  "md": asset_url('js/note-editor.js')
+} | tojson }}</script>
+<script src="{{ asset_url('js/notes.js') }}"></script>
+<script src="{{ asset_url('js/note-editor.js') }}"></script>
+<script src="{{ asset_url('js/note-inline.js') }}"></script>
 {% endblock %}

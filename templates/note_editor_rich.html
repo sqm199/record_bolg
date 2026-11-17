@@ -3,7 +3,7 @@
 {% block page_class %}page-wide{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/notes.css') }}">
+<link rel="stylesheet" href="{{ asset_url('CSS/notes.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -14,6 +14,6 @@
 
 {% block scripts %}
 {% include "_note_editor_rich_config.html" %}
-<script src="{{ url_for('static', filename='vendor/tiptap.js') }}"></script>
-<script src="{{ url_for('static', filename='js/note-editor-rich.js') }}"></script>
+<script src="{{ asset_url('vendor/tiptap.js') }}"></script>
+<script src="{{ asset_url('js/note-editor-rich.js') }}"></script>
 {% endblock %}

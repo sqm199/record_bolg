@@ -12,6 +12,27 @@
   var returnScroll = 0;
   var scriptCache = {};
 
+  // 编辑器脚本的带版本地址由服务端注入，避免反向代理强缓存旧脚本。
+  var editorAssets = (function () {
+    var defaults = {
+      tiptap: '/static/vendor/tiptap.js',
+      rich: '/static/js/note-editor-rich.js',
+      md: '/static/js/note-editor.js'
+    };
+    var el = document.getElementById('noteEditorAssets');
+    if (!el) return defaults;
+    try {
+      var data = JSON.parse(el.textContent || '{}');
+      return {
+        tiptap: data.tiptap || defaults.tiptap,
+        rich: data.rich || defaults.rich,
+        md: data.md || defaults.md
+      };
+    } catch (e) {
+      return defaults;
+    }
+  })();
+
   function isPlainClick(event) {
     return event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
   }
@@ -32,6 +53,25 @@
     return list.reduce(function (chain, src) {
       return chain.then(function () { return loadScript(src); });
     }, Promise.resolve());
+  }
+
+  function withCacheBust(src) {
+    return src + (src.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now();
+  }
+
+  function editorReady(editor) {
+    if (editor === 'markdown') return !!window.NoteEditorMarkdown;
+    return !!(window.TipTapKit && window.NoteEditorRich);
+  }
+
+  function editorScripts(editor) {
+    return editor === 'markdown'
+      ? [editorAssets.md]
+      : [editorAssets.tiptap, editorAssets.rich];
+  }
+
+  function defaultParentId() {
+    return (main && main.dataset.noteId) || '';
   }
 
   function editorFetchUrl(mode, keyid, parent) {
@@ -86,16 +126,18 @@
     workspace.classList.add('is-inline-editing');
     main.removeAttribute('aria-busy');
 
+    // 从页面下方打开编辑器时，让编辑器顶部进入视野。
+    var mainTop = main.getBoundingClientRect().top + window.scrollY - 12;
+    if (window.scrollY > mainTop) window.scrollTo(0, Math.max(0, mainTop));
+
     var hooks = {
       onCancel: function () { closeEditor(true); },
       onSaved: function (result) {
         var savedId = (result && result.keyid) || keyid;
         var isNew = mode === 'new';
         closeEditor(false);
-        if (isNew) {
-          window.location.href = '/note/view/' + encodeURIComponent(savedId);
-          return;
-        }
+        // 新建与编辑一致：在当前页面就地切换到新笔记的阅读态。
+        if (isNew) window.scrollTo(0, 0);
         if (window.NotesPage && typeof window.NotesPage.reload === 'function') {
           window.NotesPage.reload('/note/view/' + encodeURIComponent(savedId));
         } else {
@@ -113,7 +155,13 @@
     if (!handle) {
       root.parentNode && root.parentNode.removeChild(root);
       closeEditor(true);
-      UI.toast('编辑器初始化失败，请刷新页面重试', 'error');
+      console.error('[note-inline] editor mount failed', {
+        editor: data.editor,
+        hasMarkdown: !!window.NoteEditorMarkdown,
+        hasRich: !!window.NoteEditorRich,
+        hasTipTap: !!window.TipTapKit
+      });
+      UI.toast('编辑器初始化失败，请按 Ctrl+F5 强制刷新后重试', 'error');
       return;
     }
     active = { root: root, handle: handle, mode: mode, keyid: keyid };
@@ -159,10 +207,18 @@
         if (!data || data.code !== 1 || !data.html) {
           throw new Error((data && data.msgs) || '无法打开编辑器');
         }
-        var scripts = data.editor === 'markdown'
-          ? ['/static/js/note-editor.js']
-          : ['/static/vendor/tiptap.js', '/static/js/note-editor-rich.js'];
-        return loadScripts(scripts).then(function () { return data; });
+        var editor = data.editor === 'markdown' ? 'markdown' : 'rich';
+        if (editorReady(editor)) return data;
+        return loadScripts(editorScripts(editor)).then(function () {
+          if (editorReady(editor)) return data;
+          // 命中了没有全局入口的旧缓存时，带随机参数强制重取一次。
+          return loadScripts(editorScripts(editor).map(withCacheBust)).then(function () {
+            if (!editorReady(editor)) {
+              throw new Error('编辑器脚本未能加载，请按 Ctrl+F5 强制刷新后重试');
+            }
+            return data;
+          });
+        });
       })
       .then(function (data) {
         loading = false;
@@ -193,7 +249,9 @@
     }
     if (/\/note\/new\/?$/.test(url.pathname)) {
       event.preventDefault();
-      openEditor('new', '', url.searchParams.get('parent') || '');
+      var parent = url.searchParams.get('parent');
+      if (parent === null) parent = defaultParentId();
+      openEditor('new', '', parent);
     }
   }
 
