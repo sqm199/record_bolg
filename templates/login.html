@@ -4,12 +4,12 @@
 {% block head %}
 <style>
   .auth-wrap { background: var(--bg-base); position: relative; overflow: hidden; }
-  /* 远处一座低饱和的山影，呼应首页的松绿意象 */
+  /* 底部一层暖砂与墨青的柔和晕染 */
   .auth-wrap::before {
     content: '';
     position: absolute; left: 0; right: 0; bottom: 0; height: 34vh;
     background:
-      radial-gradient(120% 100% at 20% 100%, var(--sage-soft) 40%, transparent 70%),
+      radial-gradient(120% 100% at 20% 100%, var(--bg-sunken) 40%, transparent 70%),
       radial-gradient(120% 100% at 80% 100%, var(--accent-soft) 35%, transparent 70%);
     pointer-events: none;
   }

@@ -3,13 +3,26 @@ window.Travel = (function () {
   'use strict';
 
   var SPOT_TYPES = {
-    start: { label: '出发点',  icon: 'i-flag',      color: '#4c6b58' },
-    food:  { label: '吃饭',    icon: 'i-cutlery',   color: '#c2882f' },
-    hotel: { label: '住宿',    icon: 'i-bed',       color: '#6f83ab' },
-    sight: { label: '游玩点',  icon: 'i-leaf',      color: '#7d9b84' },
-    way:   { label: '途经点',  icon: 'i-pin',       color: '#77817a' },
-    end:   { label: '终点',    icon: 'i-finish',    color: '#b7574c' }
+    start: { label: '出发点',  icon: 'i-flag' },
+    food:  { label: '吃饭',    icon: 'i-cutlery' },
+    hotel: { label: '住宿',    icon: 'i-bed' },
+    sight: { label: '游玩点',  icon: 'i-leaf' },
+    way:   { label: '途经点',  icon: 'i-pin' },
+    end:   { label: '终点',    icon: 'i-finish' }
   };
+  // 地图标记颜色取自设计 token，与列表左侧色条保持一致
+  var SPOT_FALLBACK = {
+    start: '#0f766e', food: '#b45309', hotel: '#475569',
+    sight: '#4d7c0f', way: '#78716c', end: '#b91c1c'
+  };
+  function cssVar(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+  function spotColor(type) {
+    var t = SPOT_TYPES[type] ? type : 'way';
+    return cssVar('--spot-' + t, SPOT_FALLBACK[t]);
+  }
   function svgIcon(id) {
     return '<svg class="icon"><use href="#' + id + '"/></svg>';
   }
@@ -333,7 +346,7 @@ window.Travel = (function () {
       var mk = new AMap.Marker({
         position: ll,
         offset: new AMap.Pixel(-13, -26),
-        content: '<div class="amap-spot-marker" style="--mk-bg:' + cfg.color + '"><span>' + (i + 1) + '</span></div>',
+        content: '<div class="amap-spot-marker" style="--mk-bg:' + spotColor(s.Type) + '"><span>' + (i + 1) + '</span></div>',
         title: cfg.label + '：' + (s.Name || cfg.label)
       });
       mk.setMap(map);
@@ -347,7 +360,7 @@ window.Travel = (function () {
   function drawRoute(legIdx, pathPoints) {
     polylines.forEach(function (p, i) { if (p._leg === legIdx) { p.setMap(null); polylines.splice(i, 1); } });
     var pl = new AMap.Polyline({
-      path: pathPoints, strokeColor: '#c4907c', strokeWeight: 5,
+      path: pathPoints, strokeColor: cssVar('--accent', '#0f766e'), strokeWeight: 5,
       strokeOpacity: 0.85, lineJoin: 'round', lineCap: 'round'
     });
     pl._leg = legIdx;

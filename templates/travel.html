@@ -2,7 +2,7 @@
 {% block title %}Travel — 羚羊之家{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='CSS/travel.css') }}">
+<link rel="stylesheet" href="{{ asset_url('CSS/travel.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -147,5 +147,5 @@
   var AMAP_KEY = {{ amap_key | tojson }};
   var TRAVEL_PLANS = {{ plans | tojson }};
 </script>
-<script src="{{ url_for('static', filename='js/travel.js') }}"></script>
+<script src="{{ asset_url('js/travel.js') }}"></script>
 {% endblock %}

@@ -61,9 +61,8 @@ body.editor-focus .notes-workspace.is-inline-editing .notes-rail { display: none
 .btn-ink:hover {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fdfdfb;
+  color: var(--on-accent);
 }
-html[data-theme="dark"] .btn-ink:hover { color: #181c19; }
 .btn-ink:active { transform: scale(.985); }
 .btn-ink:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
@@ -1490,7 +1489,7 @@ body.editor-focus .rich-content.note-body { min-height: calc(100dvh - 236px); }
     position: fixed;
     inset: 60px 0 0;
     z-index: 94;
-    background: color-mix(in srgb, #14120f 42%, transparent);
+    background: color-mix(in srgb, var(--bg-nav) 42%, transparent);
   }
   body.notes-drawer-open { overflow: hidden; }
   .note-tree-scroll { padding-top: 10px; }

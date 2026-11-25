@@ -177,7 +177,7 @@
 .spot-item[data-type="food"]  { --spot-accent: var(--spot-food); }
 .spot-item[data-type="hotel"] { --spot-accent: var(--spot-hotel); }
 .spot-item[data-type="sight"] { --spot-accent: var(--spot-sight); }
-.spot-item[data-type="way"]   { --spot-accent: var(--text-muted); }
+.spot-item[data-type="way"]   { --spot-accent: var(--spot-way); }
 .spot-item[data-type="end"]   { --spot-accent: var(--spot-end); }
 
 /* 行程概览 */
@@ -234,7 +234,7 @@
   width: 26px; height: 26px;
   border-radius: 50% 50% 50% 4px;
   transform: rotate(-45deg);
-  background: var(--mk-bg, #c4907c);
+  background: var(--mk-bg, var(--accent));
   color: #fff;
   font-size: .72rem; font-weight: 700;
   box-shadow: 0 2px 6px rgba(0,0,0,.3);

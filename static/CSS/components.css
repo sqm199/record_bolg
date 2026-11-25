@@ -6,7 +6,7 @@
 /* ── Buttons ── */
 .btn-accent {
   background: var(--accent);
-  color: #fdfdfb;
+  color: var(--on-accent);
   border: none;
   padding: 0.55rem 1.25rem;
   border-radius: var(--radius-sm);
@@ -23,7 +23,7 @@
 }
 .btn-accent:hover {
   background: var(--accent-hover);
-  color: #fdfdfb;
+  color: var(--on-accent);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
@@ -52,8 +52,8 @@
 }
 
 .btn-danger {
-  background: var(--danger);
-  color: #fdfdfb;
+  background: var(--danger-solid);
+  color: var(--on-danger);
   border: none;
   padding: 0.45rem 1rem;
   border-radius: var(--radius-sm);
@@ -66,7 +66,7 @@
   gap: .4rem;
   transition: background var(--dur), transform var(--dur-fast);
 }
-.btn-danger:hover { background: color-mix(in srgb, var(--danger) 85%, #000); transform: translateY(-1px); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger-solid) 85%, #000); transform: translateY(-1px); }
 
 .icon-btn {
   width: 38px;
@@ -148,7 +148,7 @@
   max-height: 80vh;
   object-fit: contain;
   border-radius: var(--radius-sm);
-  background: #12141e;
+  background: var(--bg-nav);
 }
 .lightbox-side {
   width: 240px;
@@ -229,7 +229,7 @@
 .app-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, #14120f 55%, transparent);
+  background: color-mix(in srgb, var(--bg-nav) 55%, transparent);
   backdrop-filter: blur(3px);
   animation: modal-fade var(--dur) var(--ease);
 }
@@ -331,7 +331,7 @@ body.modal-open { overflow: hidden; }
   height: 54px;
   border-radius: 50%;
   background: var(--accent);
-  color: #fdfdfb;
+  color: var(--on-accent);
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
@@ -561,7 +561,7 @@ body.modal-open { overflow: hidden; }
 .note-body img { max-width: 100%; border-radius: var(--radius-sm); }
 .note-body table { border-collapse: collapse; width: 100%; margin: 0 0 1rem; font-size: 0.88rem; }
 .note-body th,
-.note-body td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; }
+.note-body td { border: 1px solid var(--border-strong); padding: 0.5rem 0.75rem; }
 .note-body th { background: var(--accent-soft); font-weight: 600; }
 
 /* ── Timeline（日记本式：日期大数字 + 内容卡） ── */
@@ -729,8 +729,8 @@ body.modal-open { overflow: hidden; }
   height: 20px;
   border-radius: 50%;
   border: 1px solid var(--bg-surface);
-  background: var(--danger);
-  color: #fff;
+  background: var(--danger-solid);
+  color: var(--on-danger);
   cursor: pointer;
   padding: 0;
   line-height: 1;
